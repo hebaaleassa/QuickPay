@@ -1,6 +1,6 @@
 package org.example.payments.service;
 
-import org.example.payments.model.Payment;
+import org.example.payments.model.PaymentEntity;
 import org.example.payments.repository.PaymentRepository;
 import org.springframework.stereotype.Component;
 
@@ -15,22 +15,19 @@ public class PaymentService {
         this.repository = repository;
     }
 
-    public Payment SavePayment(Payment payment) {
+    public PaymentEntity save(PaymentEntity payment) {
         return repository.save(payment);
     }
 
-    public Optional<Payment> findPaymentById(Long id) {
+    public Optional<PaymentEntity> findBy(Long id) {
         return repository.findById(id);
     }
 
-    public List<Payment> findAllPayment() {
+    public List<PaymentEntity> findAll() {
         return repository.findAll();
     }
 
-
-    public List<Payment> findAllBySender(String senderAccount) {
+    public List<PaymentEntity> findAllBy(String senderAccount) {
         return repository.findBySenderAccount(senderAccount);
     }
-
-
 }

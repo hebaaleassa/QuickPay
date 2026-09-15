@@ -8,14 +8,13 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Instant;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Payment {
+public class PaymentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,13 +24,7 @@ public class Payment {
     private BigDecimal amount;
     private String currency;
     private String status;
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
     private Instant createdAt;
     private String notes;
 
-    @PrePersist
-    protected void onCreate(){
-        this.createdAt = Instant.now();
-    }
 }

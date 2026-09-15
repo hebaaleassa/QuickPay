@@ -1,6 +1,6 @@
 package org.example.payments.service;
 
-import org.example.payments.model.Payment;
+import org.example.payments.model.PaymentEntity;
 import org.example.payments.repository.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,24 +25,24 @@ class PaymentServiceTest {
     @InjectMocks
     private PaymentService paymentService;
 
-    private Payment payment;
+    private PaymentEntity payment;
 
     @BeforeEach
     void setUp() {
-        payment = new Payment();
+        payment = new PaymentEntity();
         payment.setAmount(new BigDecimal("100.00"));
 
     }
 
     @Test
     void givenPayment_whenCreateSaves_thenReturnsThePaymentAndSuccess() {
-        Payment saved = new Payment();
+        PaymentEntity saved = new PaymentEntity();
         saved.setId(1L);
         saved.setAmount(new BigDecimal("100.00"));
 
         Mockito.when(paymentRepository.save(payment)).thenReturn(saved);
 
-        Payment result = paymentService.SavePayment(payment);
+        PaymentEntity result = paymentService.save(payment);
 
         assertEquals(1L, result.getId());
         Mockito.verify(paymentRepository).save(payment);
@@ -53,7 +53,7 @@ class PaymentServiceTest {
         payment.setId(1L);
         Mockito.when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
 
-        Payment result = paymentService.findPaymentById(1L).get();
+        PaymentEntity result = paymentService.findBy(1L).get();
         assertEquals(1L, result.getId());
 
         Mockito.verify(paymentRepository).findById(1L);
@@ -62,9 +62,10 @@ class PaymentServiceTest {
 
     @Test
     void givenUndefinedId_whenFindPaymentById_thenNull() {
+
         Mockito.when(paymentRepository.findById(4L)).thenReturn(Optional.empty());
 
-        Optional<Payment> result = paymentService.findPaymentById(4L);
+        Optional<PaymentEntity> result = paymentService.findBy(4L);
         assertEquals(Optional.empty(), result);
 
         Mockito.verify(paymentRepository).findById(4L);
@@ -73,7 +74,7 @@ class PaymentServiceTest {
     @Test
     void givenAll_whenFindAllPayment_thenReturnListOfPayments(){
         Mockito.when(paymentRepository.findAll()).thenReturn(List.of(payment));
-        List<Payment> paymentList = paymentService.findAllPayment();
+        List<PaymentEntity> paymentList = paymentService.findAll();
         assertEquals(1, paymentList.size());
         Mockito.verify(paymentRepository).findAll();
     }
