@@ -20,6 +20,5 @@ public class PaymentRequest {
     private BigDecimal amount;
     private String currency;
     private String status;
-    private Instant createdAt;
     private String notes;
 }
