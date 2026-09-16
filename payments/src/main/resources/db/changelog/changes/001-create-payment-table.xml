@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <property name="char" value=""/>
+
+    <changeSet id="001-create-payment-table" author="Hebah Aleassa">
+        <createTable tableName="payment_entity">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sender_account" type="VARCHAR(255 ${char})"/>
+            <column name="receiver_account" type="VARCHAR(255 ${char})"/>
+            <column name="amount" type="decimal(19,4)"/>
+            <column name="currency" type="VARCHAR(255 ${char})"/>
+            <column name="status" type="VARCHAR(255 ${char})"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="notes" type="VARCHAR(255 ${char})"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
