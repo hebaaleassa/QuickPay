@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+
+    <changeSet id="004-insert-initial-payments" author="Hebah Aleassa">
+        <insert tableName="payment_entity">
+            <column name="sender_account" value="ACC-12345"/>
+            <column name="receiver_account" value="ACC-67890"/>
+            <column name="amount" value="250.50"/>
+            <column name="currency" value="USD"/>
+            <column name="status" value="COMPLETED"/>
+            <column name="created_at" valueComputed="NOW()"/>
+            <column name="notes" value="Monthly subscription fee"/>
+            <column name="creditor_name" value="heba aleassa"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="payment_entity">
+                <where>sender_account = 'ACC-12345' AND receiver_account = 'ACC-67890' AND amount = 250.50</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
