@@ -16,9 +16,7 @@ public class ValidatorChain<T> {
     public ValidationResult validate(T value) {
         Set<Violation> violations = new LinkedHashSet<>();
         for (Validator<T> validator : validators) {
-            validator.validate(value).ifPresent(
-                    violations::add
-            );
+            violations.addAll(validator.validate(value));
         }
         return new ValidationResult(violations);
     }

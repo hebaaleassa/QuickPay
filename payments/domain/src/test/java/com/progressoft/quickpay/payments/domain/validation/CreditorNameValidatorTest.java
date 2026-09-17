@@ -2,8 +2,11 @@ package com.progressoft.quickpay.payments.domain.validation;
 
 import com.progressoft.quickpay.payments.domain.PaymentTestData;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
+import com.progressoft.quickpay.payments.domain.model.violation.Violation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 class CreditorNameValidatorTest {
     private final CreditorNameValidator validator = new CreditorNameValidator();
@@ -17,27 +20,38 @@ class CreditorNameValidatorTest {
     void givenNullName_whenValidate_thenViolationReturned() {
         Payment payment = PaymentTestData.validPayment();
         payment.setCreditorName(null);
-        Assertions.assertTrue(validator.validate(payment).isPresent());
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals("creditorName must not be blank or null", violations.get(0).message());
+        Assertions.assertEquals("CreditorNameValidator", violations.get(0).violator());
     }
 
     @Test
     void givenOneWordName_whenValidate_thenViolationReturned() {
         Payment payment = PaymentTestData.validPayment();
         payment.setCreditorName("Tolay");
-        Assertions.assertTrue(validator.validate(payment).isPresent());
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("creditor name must be 2 Alphanumeric parts", violations.get(0).message());
+        Assertions.assertEquals("CreditorNameValidator", violations.get(0).violator());
     }
 
     @Test
     void givenThreeWordName_whenValidate_thenViolationReturned() {
         Payment payment = PaymentTestData.validPayment();
         payment.setCreditorName("Tolay Kamal Khamis");
-        Assertions.assertTrue(validator.validate(payment).isPresent());
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("creditor name must be 2 Alphanumeric parts", violations.get(0).message());
+        Assertions.assertEquals("CreditorNameValidator", violations.get(0).violator());
     }
 
     @Test
     void givenSpecialCharacter_whenValidate_thenViolationReturned() {
         Payment payment = PaymentTestData.validPayment();
         payment.setCreditorName("Tolay K!");
-        Assertions.assertTrue(validator.validate(payment).isPresent());
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("creditor name must be 2 Alphanumeric parts", violations.get(0).message());
+        Assertions.assertEquals("CreditorNameValidator", violations.get(0).violator());
     }
 }

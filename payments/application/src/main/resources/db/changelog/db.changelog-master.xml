@@ -11,4 +11,5 @@
 
     <include file="db/changelog/changes/003-create-payment-sequence.xml"
              relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/004-update-note-size.xml"/>
 </databaseChangeLog>

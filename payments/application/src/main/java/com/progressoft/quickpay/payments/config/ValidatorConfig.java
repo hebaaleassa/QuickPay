@@ -40,9 +40,23 @@ public class ValidatorConfig {
         return new CreditorNameValidator();
     }
 
-    @Bean()
+    @Bean("createPaymentValidators")
     public ValidatorChain<Payment> createPaymentValidators(
-            List<Validator<Payment>> validators) {
-        return new ValidatorChain<>(validators);
+            SenderAccountValidator senderAccountValidator,
+            RecieverAccountValidator recieverAccountValidator,
+            AmountValidator amountValidator,
+            CurrencyValidator currencyValidator,
+            CreditorNameValidator creditorNameValidator,
+            NotesValidator notesValidator) {
+        return new ValidatorChain<>(
+                List.of(
+                        senderAccountValidator,
+                        recieverAccountValidator,
+                        amountValidator,
+                        currencyValidator,
+                        creditorNameValidator,
+                        notesValidator
+                )
+        );
     }
 }

@@ -2,8 +2,11 @@ package com.progressoft.quickpay.payments.domain.validation;
 
 import com.progressoft.quickpay.payments.domain.PaymentTestData;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
+import com.progressoft.quickpay.payments.domain.model.violation.Violation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 class NotesValidatorTest {
     private final NotesValidator validator = new NotesValidator();
@@ -17,7 +20,10 @@ class NotesValidatorTest {
     void givenNotesOver500Characters_whenValidate_thenViolationReturned() {
         Payment payment = PaymentTestData.validPayment();
         payment.setNotes("T".repeat(5600));
-        Assertions.assertTrue(validator.validate(payment).isPresent());
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("notes length should be less than 500", violations.get(0).message());
+        Assertions.assertEquals("NotesValidator", violations.get(0).violator());
     }
 
     @Test
