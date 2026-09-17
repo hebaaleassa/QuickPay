@@ -16,10 +16,8 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <packaging>pom</packaging>
 
 
-
     <properties>
         <java.version>25</java.version>
-        <lombok.version>1.18.34</lombok.version>
         <mapstruct.version>1.6.2</mapstruct.version>
     </properties>
 

@@ -6,4 +6,9 @@
 
     <include file="db/changelog/changes/001-create-payments-table.xml" relativeToChangelogFile="false"/>
 
+    <include file="db/changelog/changes/002-add-creditor-name.xml"
+             relativeToChangelogFile="false"/>
+
+    <include file="db/changelog/changes/003-create-payment-sequence.xml"
+             relativeToChangelogFile="false"/>
 </databaseChangeLog>

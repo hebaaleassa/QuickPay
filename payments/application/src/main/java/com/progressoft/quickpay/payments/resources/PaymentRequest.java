@@ -12,6 +12,6 @@ public class PaymentRequest {
     private String receiverAccount;
     private BigDecimal amount;
     private String currency;
-    private String status;
     private String notes;
+    private String creditorName;
 }

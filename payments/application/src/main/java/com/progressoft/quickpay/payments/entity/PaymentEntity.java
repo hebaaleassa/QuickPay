@@ -1,5 +1,6 @@
 package com.progressoft.quickpay.payments.entity;
 
+import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,16 +15,23 @@ import java.time.Instant;
 @Getter
 public class PaymentEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "payment_sequence")
+    @SequenceGenerator(
+            name = "payment_sequence",
+            sequenceName = "payments_sequence",
+            allocationSize = 1
+    )
     private Long id;
 
     private String senderAccount;
     private String receiverAccount;
     private BigDecimal amount;
     private String currency;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
     private Instant createdAt;
     private String notes;
+    private String creditorName;
 
 
 }

@@ -1,17 +1,19 @@
 package com.progressoft.quickpay.payments.controller;
 
 
-import com.progressoft.quickpay.payments.entity.PaymentEntity;
+import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import com.progressoft.quickpay.payments.resources.PaymentRequest;
 import com.progressoft.quickpay.payments.resources.PaymentResponse;
 import com.progressoft.quickpay.payments.service.PaymentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -26,16 +28,22 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<PaymentResponse> create(@RequestBody PaymentRequest request) {
-        PaymentEntity saved = service.create(mapper.toRequest(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(saved));
+        log.info("recieved request to create payment");
+        Payment payment = mapper.toDomain(mapper.toRequest(request));
+        service.create(payment);
+        log.info("payment created successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(payment));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PaymentResponse> getOne(@PathVariable Long id) {
-        PaymentEntity payment = service.findBy(id).orElse(null);
+        log.info("recieved request for one payment");
+        Payment payment = service.findBy(id).orElse(null);
         if (payment == null) {
+            log.warn("Payment not found");
             return ResponseEntity.notFound().build();
         }
+        
         return ResponseEntity.ok(mapper.toResponse(payment));
     }
 

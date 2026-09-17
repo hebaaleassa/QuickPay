@@ -1,5 +1,6 @@
 package com.progressoft.quickpay.payments.resources;
 
+import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +16,9 @@ public class PaymentResponse {
     private String receiverAccount;
     private BigDecimal amount;
     private String currency;
-    private String status;
+    private PaymentStatus status;
     private Instant createdAt;
     private String notes;
+    private String creditorName;
+
 }
