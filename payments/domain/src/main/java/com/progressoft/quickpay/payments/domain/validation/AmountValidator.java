@@ -20,7 +20,7 @@ public class AmountValidator implements Validator<Payment> {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             return Optional.of(new Violation("amount must be greater than zero", "AmountValidator"));
         }
-        if (Math.max(amount.stripTrailingZeros().scale(), 0) > 2) {
+        if (amount.stripTrailingZeros().scale() > 2) {
             return Optional.of(new Violation("amount must have maximum 2 decimal places", "AmountValidator"));
         }
         return Optional.empty();
