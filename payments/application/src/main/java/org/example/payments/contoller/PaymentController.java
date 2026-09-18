@@ -34,10 +34,6 @@ public class PaymentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long id) {
-//        Optional<PaymentEntity> payment = service.findBy(id);
-//        if (!payment.isEmpty())
-//            return ResponseEntity.ok(mapper.toResponse(payment.get()));
-//        return ResponseEntity.notFound().build();
         return service.findBy(id).map(domain -> ResponseEntity.ok(mapper.toResponse(domain)))
                 .orElse(ResponseEntity.notFound().build());
 

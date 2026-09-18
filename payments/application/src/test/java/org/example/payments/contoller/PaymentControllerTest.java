@@ -38,9 +38,6 @@ class PaymentControllerTest {
 
     @MockitoBean
     private PaymentMapper paymentMapper;
-//
-//    @MockitoBean
-//    private PaymentMapper mapper;
 
     private Payment payment;
     private PaymentResponse paymentResponse;
