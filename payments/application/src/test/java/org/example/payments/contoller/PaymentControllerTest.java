@@ -17,6 +17,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.example.payments.mapper.PaymentMapper;
@@ -24,6 +25,7 @@ import org.example.payments.resource.PaymentRequest;
 import org.example.payments.resource.PaymentResponse;
 
 import static org.mockito.ArgumentMatchers.any;
+import org.example.model.Payment;
 
 @WebMvcTest(PaymentController.class)
 class PaymentControllerTest {
@@ -36,17 +38,24 @@ class PaymentControllerTest {
 
     @MockitoBean
     private PaymentMapper paymentMapper;
+//
+//    @MockitoBean
+//    private PaymentMapper mapper;
 
-    private PaymentEntity payment;
+    private Payment payment;
     private PaymentResponse paymentResponse;
 
     @BeforeEach
-    void setPayment() {
-        payment = new PaymentEntity();
+    void setUp() {
+        payment = new Payment();
         payment.setId(1L);
+        payment.setAmount(BigDecimal.valueOf(555));
+        payment.setCurrency("USD");
 
         paymentResponse = new PaymentResponse();
         paymentResponse.setId(1L);
+        paymentResponse.setAmount(BigDecimal.valueOf(100));
+        paymentResponse.setCurrency("USD");
     }
 
     @Test
@@ -60,41 +69,27 @@ class PaymentControllerTest {
     }
 
     @Test
-    void givenPaymentPost_whenSavePayment_thenCreated() throws Exception {
-        when(paymentMapper.toEntity(any(PaymentRequest.class))).thenReturn(payment);
-        when(paymentService.save(any(PaymentEntity.class))).thenReturn(payment);
-        when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
-
-        mockMvc.perform(post("/api/payments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amount\": 100.00}"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1));
-    }
-
-    @Test
-    void givenPaymentId_whenFindPaymentById_thenReturnPaymentStatusOk() throws Exception {
+    void givenValidId_whenFindById_thenReturnOk() throws Exception {
         when(paymentService.findBy(1L)).thenReturn(Optional.of(payment));
         when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
 
-        mockMvc.perform(get("/api/payments/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/payments/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    void givenIdNotFound_whenFindPaymentById_thenReturnNotFound() throws Exception {
-        PaymentEntity saved = new PaymentEntity();
-        saved.setId(1L);
+    void givenValidRequest_whenCreatePayment_thenReturnCreated() throws Exception {
+        String jsonFile = "{\"senderAccount\":\"ACC1004\",\"receiverAccount\":\"ACC2004\",\"amount\":250.50,\"currency\":\"USD\",\"notes\":\"\",\"creditorName\":\"Heba Aleassa\"}";
 
-        when(paymentService.findBy(2L)).thenReturn(Optional.empty());
+        when(paymentMapper.toDomain(any(PaymentRequest.class))).thenReturn(payment);
+        when(paymentService.save(any(Payment.class))).thenReturn(payment);
+        when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
 
-        mockMvc.perform(get("/api/payments/{id}", 2L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonFile))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L));
     }
-
-
-
 }

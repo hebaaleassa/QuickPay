@@ -7,6 +7,7 @@
     <include file="changes/001-create-payment-table.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-add-creditorName-column.xml" relativeToChangelogFile="true"/>
     <include file="changes/003-create-payments-sequence.xml" relativeToChangelogFile="true"/>
-    <include file="changes/004-insert-payment-table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-update-notesSize-Payment-Table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/005-insert-payment-table.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

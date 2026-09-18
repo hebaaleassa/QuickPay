@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 @Mapper(componentModel = "spring")
 public interface PaymentMapper {
 
-     PaymentEntity toEntity(PaymentRequest request);
-     PaymentResponse toResponse(PaymentEntity entity);
+     Payment toDomain(PaymentRequest request);
+     PaymentResponse toResponse(Payment payment);
 
      PaymentEntity toEntity(Payment payment);
      Payment toDomain(PaymentEntity entity);

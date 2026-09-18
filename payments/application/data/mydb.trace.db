@@ -1,3 +1,6 @@
-2026-09-17 22:37:17.262972+03:00 jdbc[3]: exception
+2026-09-18 13:22:30.069731+03:00 jdbc[3]: exception
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "DATABASECHANGELOGLOCK" not found; SQL statement:
 SELECT COUNT(*) FROM PUBLIC.DATABASECHANGELOGLOCK [42102-240]
+2026-09-18 15:29:20.389999+03:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "PAYMENTS" not found; SQL statement:
+ALTER TABLE PUBLIC.payments ALTER COLUMN notes VARCHAR(500) [42102-240]
