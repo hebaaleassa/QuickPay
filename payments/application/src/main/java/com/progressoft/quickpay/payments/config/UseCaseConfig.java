@@ -1,5 +1,6 @@
 package com.progressoft.quickpay.payments.config;
 
+import com.progressoft.quickpay.payments.domain.model.payment.ParsedPayment;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.domain.usecases.CreatePaymentUseCase;
@@ -26,13 +27,12 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public ParseFileUseCase<Payment> parseFileUseCase(FileParserFactory fileParserFactory,
-                                                      TemplateReaderImpl templateReader) {
+    public ParseFileUseCase<ParsedPayment> parseFileUseCase(FileParserFactory fileParserFactory, TemplateReaderImpl templateReader) {
         return new ParseFileUseCase<>(templateReader, fileParserFactory, new PaymentRowMapper());
     }
 
     @Bean
-    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<Payment> parseFileUseCase, CreatePaymentUseCase createPaymentUseCase) {
+    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase, CreatePaymentUseCase createPaymentUseCase) {
         return new UploadBulkPaymentUseCase(parseFileUseCase, createPaymentUseCase);
     }
 
@@ -65,5 +65,10 @@ public class UseCaseConfig {
     @Bean
     public CreateTemplateUseCase createTemplateUseCase(TemplateRepositoryImpl templates) {
         return new CreateTemplateUseCase(templates);
+    }
+
+    @Bean
+    public UpdateTemplateUseCase updateTemplateUseCase(TemplateRepositoryImpl templateRepository) {
+        return new UpdateTemplateUseCase(templateRepository);
     }
 }

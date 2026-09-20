@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments.repository;
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
 import com.progressoft.training.fileparser.domain.Template;
+import com.progressoft.training.fileparser.exception.TemplateNotFoundException;
 import com.progressoft.training.fileparser.repository.TemplateRepositoryInterface;
 import org.springframework.stereotype.Component;
 
@@ -36,13 +37,21 @@ public class TemplateRepositoryImpl implements TemplateRepositoryInterface {
 
     @Override
     public Template save(Template template) {
-        TemplateEntity entity = mapper.toEntity(template);
+        TemplateEntity entity = repository.findByName(template.name()).map(
+                exists -> updateFields(exists, template)).orElseGet(() -> mapper.toEntity(template));
         TemplateEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
     }
 
     @Override
     public void deleteByName(String name) {
-        repository.findByName(name).ifPresent(repository::delete);
+        TemplateEntity entity = repository.findByName(name).orElseThrow(() -> new TemplateNotFoundException(name));
+        repository.delete(entity);
+    }
+
+    private TemplateEntity updateFields(TemplateEntity exists, Template template) {
+        exists.getFields().clear();
+        exists.getFields().addAll(mapper.toEntity(template).getFields());
+        return exists;
     }
 }

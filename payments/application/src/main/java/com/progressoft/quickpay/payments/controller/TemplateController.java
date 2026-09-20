@@ -56,4 +56,11 @@ public class TemplateController {
         service.delete(name);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping
+    public ResponseEntity<TemplateResponse> update(@RequestBody TemplateRequest request){
+        log.info("recieved request to update template");
+        Template template = mapper.toDomain(request);
+        return ResponseEntity.ok(mapper.toResponse(service.update(template)));
+    }
 }

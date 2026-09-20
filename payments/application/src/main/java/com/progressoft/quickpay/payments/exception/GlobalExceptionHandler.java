@@ -1,6 +1,7 @@
 package com.progressoft.quickpay.payments.exception;
 
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
+import com.progressoft.training.fileparser.exception.FileParserException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,4 +17,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
     }
 
+    @ExceptionHandler(value = FileParserException.class)
+    public ResponseEntity<String> handleFileParserException(FileParserException exception) {
+        log.error("File parser failure", exception);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    }
 }

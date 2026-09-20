@@ -2,6 +2,8 @@ package com.progressoft.quickpay.payments.domain.exception;
 
 import com.progressoft.quickpay.payments.domain.model.violation.Violation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class SystemViolationException extends RuntimeException {
@@ -13,6 +15,14 @@ public class SystemViolationException extends RuntimeException {
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("Validation failed"));
         this.violations = violations;
+    }
+
+    public List<String> getViolationMessage() {
+        List<String> message = new ArrayList<>();
+        for (Violation violation : violations) {
+            message.add("[" + violation.violator() + "]" + violation.message());
+        }
+        return message;
     }
 
     public Set<Violation> getViolations() {
