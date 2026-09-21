@@ -16,4 +16,9 @@ public class PaymentTestData {
         return payment;
     }
 
+    public static Payment invalidAmountPayment() {
+        Payment payment = validPayment();
+        payment.setAmount(new BigDecimal("-10"));
+        return payment;
+    }
 }

@@ -4,6 +4,7 @@ package com.progressoft.quickpay.payments.controller;
 import com.progressoft.quickpay.payments.PaymentTestData;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
+import com.progressoft.quickpay.payments.exception.GlobalExceptionHandler;
 import com.progressoft.quickpay.payments.mapper.PaymentMapperImpl;
 import com.progressoft.quickpay.payments.service.PaymentService;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PaymentController.class)
-@Import(PaymentMapperImpl.class)
+@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class})
 class PaymentControllerTest {
 
     private static final Long payment_id = PaymentTestData.PAYMENT_ID;

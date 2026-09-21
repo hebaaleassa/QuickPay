@@ -6,7 +6,6 @@ import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,19 +29,17 @@ public class PaymentRepositoryImpl implements PaymentRepository {
 
     @Override
     public Optional<Payment> findBy(Long id) {
-        Optional<PaymentEntity> entity = paymentRepositoryJpa.findById(id);
-        if (entity.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(paymentMapper.toDomain(entity.get()));
+        return paymentRepositoryJpa.findById(id).map(paymentMapper::toDomain);
     }
 
     @Override
     public List<Payment> findAll() {
-        List<Payment> payments = new ArrayList<>();
-        for (PaymentEntity entity : paymentRepositoryJpa.findAll()) {
-            payments.add(paymentMapper.toDomain(entity));
-        }
-        return payments;
+        return paymentRepositoryJpa.findAll().stream().map(paymentMapper::toDomain).toList();
+    }
+
+    @Override
+    public void saveAll(List<Payment> payments) {
+        List<PaymentEntity> entities = payments.stream().map(paymentMapper::toEntity).toList();
+        paymentRepositoryJpa.saveAll(entities);
     }
 }
