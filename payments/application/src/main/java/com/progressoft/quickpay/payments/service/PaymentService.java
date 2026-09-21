@@ -20,7 +20,8 @@ public class PaymentService {
     private final UploadBulkPaymentUseCase uploadBulkPaymentUseCase;
 
     public PaymentService(PaymentRepository repository,
-                          CreatePaymentUseCase createPaymentUseCase, UploadBulkPaymentUseCase uploadBulkPaymentUseCase) {
+                          CreatePaymentUseCase createPaymentUseCase,
+                          UploadBulkPaymentUseCase uploadBulkPaymentUseCase) {
         this.repository = repository;
         this.createPaymentUseCase = createPaymentUseCase;
         this.uploadBulkPaymentUseCase = uploadBulkPaymentUseCase;
@@ -28,7 +29,14 @@ public class PaymentService {
 
     public BulkUploadResult uploadBulk(String templateName, Path file) {
         log.info("Uploading bulk payments");
-        return uploadBulkPaymentUseCase.execute(templateName, file);
+        BulkUploadResult result = uploadBulkPaymentUseCase.execute(templateName, file);
+
+        if (result.failureCount() == 0) {
+            for (Payment payment : result.created()) {
+                repository.save(payment);
+            }
+        }
+        return result;
     }
 
     public void create(Payment payment) {

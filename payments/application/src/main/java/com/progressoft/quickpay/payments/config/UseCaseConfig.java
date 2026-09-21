@@ -32,8 +32,8 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase, CreatePaymentUseCase createPaymentUseCase) {
-        return new UploadBulkPaymentUseCase(parseFileUseCase, createPaymentUseCase);
+    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase, ValidatorChain<Payment> validatorChain) {
+        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain);
     }
 
     @Bean

@@ -2,14 +2,15 @@ package com.progressoft.quickpay.payments.domain.usecases;
 
 
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
-import com.progressoft.quickpay.payments.domain.model.payment.BulkError;
-import com.progressoft.quickpay.payments.domain.model.payment.BulkUploadResult;
-import com.progressoft.quickpay.payments.domain.model.payment.ParsedPayment;
+import com.progressoft.quickpay.payments.domain.model.payment.*;
+import com.progressoft.quickpay.payments.domain.validation.ValidationResult;
+import com.progressoft.quickpay.payments.domain.validation.ValidatorChain;
 import com.progressoft.training.fileparser.domain.ParseResult;
 import com.progressoft.training.fileparser.domain.ValidationError;
 import com.progressoft.training.fileparser.usecase.ParseFileUseCase;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +19,12 @@ import java.util.TreeMap;
 public class UploadBulkPaymentUseCase {
 
     private final ParseFileUseCase<ParsedPayment> parseFileUseCase;
-    private final CreatePaymentUseCase createPaymentUseCase;
+    private final ValidatorChain<Payment> validatorChain;
 
-    public UploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase, CreatePaymentUseCase createPaymentUseCase) {
+    public UploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase,
+                                    ValidatorChain<Payment> validatorChain) {
         this.parseFileUseCase = parseFileUseCase;
-        this.createPaymentUseCase = createPaymentUseCase;
+        this.validatorChain = validatorChain;
     }
 
     public BulkUploadResult execute(String templateName, Path file) {
@@ -34,16 +36,23 @@ public class UploadBulkPaymentUseCase {
                     row, new ArrayList<>())).errors().add(String.format("%s: %s",
                     error.fieldName(), error.message()));
         }
-        int created = 0;
-        for (ParsedPayment payment : result.validRows()) {
+        List<Payment> validPayment = new ArrayList<>();
+
+        for (ParsedPayment parsedPayment : result.validRows()) {
             try {
-                createPaymentUseCase.execute(payment.payment());
-                created++;
+                ValidationResult validationResult = validatorChain.validate(parsedPayment.payment());
+                validationResult.throwExceptionIfViolated();
+
+                Payment payment = parsedPayment.payment();
+                payment.setCreatedAt(Instant.now());
+                payment.setStatus(PaymentStatus.PENDING);
+
+                validPayment.add(parsedPayment.payment());
             } catch (SystemViolationException exception) {
-                errors.computeIfAbsent(payment.rowNumber(), row -> new BulkError(
+                errors.computeIfAbsent(parsedPayment.rowNumber(), row -> new BulkError(
                         row, new ArrayList<>())).errors().addAll(exception.getViolationMessage());
             }
         }
-        return new BulkUploadResult(created, errors.size(), List.copyOf(errors.values()));
+        return new BulkUploadResult(validPayment.size(), errors.size(), validPayment, List.copyOf(errors.values()));
     }
 }

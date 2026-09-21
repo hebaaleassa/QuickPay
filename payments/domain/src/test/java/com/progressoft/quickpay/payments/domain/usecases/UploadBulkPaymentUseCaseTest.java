@@ -30,9 +30,8 @@ class UploadBulkPaymentUseCaseTest {
     private Path file;
 
     private UploadBulkPaymentUseCase useCase() {
-        CreatePaymentUseCase createPaymentUseCase = new CreatePaymentUseCase(paymentRepository,
-                new ValidatorChain<Payment>(List.of(new AmountValidator())));
-        return new UploadBulkPaymentUseCase(parseFileUseCase, createPaymentUseCase);
+        ValidatorChain<Payment> validatorChain = new ValidatorChain<>(List.of(new AmountValidator()));
+        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain);
     }
 
     @Test
@@ -42,8 +41,8 @@ class UploadBulkPaymentUseCaseTest {
                 new ParseResult<>(List.of(new ParsedPayment(2, payment)), List.of()));
 
         BulkUploadResult result = useCase().execute("default", file);
-        Mockito.verify(paymentRepository).save(payment);
         Assertions.assertEquals(1, result.createdCount());
+        Assertions.assertEquals(0, result.failureCount());
     }
 
     @Test
