@@ -1,5 +1,6 @@
 package com.progressoft.quickpay.payments.exception;
 
+import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
 import com.progressoft.training.fileparser.exception.FileParserException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,5 +22,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleFileParserException(FileParserException exception) {
         log.error("File parser failure", exception);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(PaymentNotFoundException.class)
+    public ResponseEntity<String> handlePaymentNotFound(PaymentNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
     }
 }
