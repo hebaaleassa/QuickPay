@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+
+    <property name="char" value=""/>
+
+    <changeSet id="006-create-template-table" author="Hebah Aleassa">
+        <createTable tableName="templates">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255 ${char})">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="template_fields" author="Hebah Aleassa">
+        <createTable tableName="template_fields">
+            <column name="template_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fields_order" type="INT">
+            </column>
+            <column name="fields_name" type="VARCHAR(255 ${char})">
+            </column>
+            <column name="fields_length" type="INT">
+            </column>
+            <column name="required" type="boolean">
+            </column>
+        </createTable>
+    </changeSet>
+
+
+    <changeSet id="addForeignKeyConstraint" author="Hebah Aleassa">
+    <addForeignKeyConstraint baseTableName="template_fields" baseColumnNames="template_id"
+                                 constraintName="fk_template_fields" referencedTableName="templates"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>

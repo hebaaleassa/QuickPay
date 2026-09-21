@@ -1,5 +1,5 @@
 package org.example.useCases;
 
-public interface UseCase< O, I> {
+public interface UseCase<I, O> {
     O execute(I input);
 }
