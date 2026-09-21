@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments.domain.usecases;
 
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
 import com.progressoft.quickpay.payments.domain.model.payment.*;
+import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.domain.validation.ValidationResult;
 import com.progressoft.quickpay.payments.domain.validation.ValidatorChain;
 import com.progressoft.training.fileparser.domain.ParseResult;
@@ -20,11 +21,14 @@ public class UploadBulkPaymentUseCase {
 
     private final ParseFileUseCase<ParsedPayment> parseFileUseCase;
     private final ValidatorChain<Payment> validatorChain;
+    private final PaymentRepository paymentRepository;
 
     public UploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase,
-                                    ValidatorChain<Payment> validatorChain) {
+                                    ValidatorChain<Payment> validatorChain,
+                                    PaymentRepository paymentRepository) {
         this.parseFileUseCase = parseFileUseCase;
         this.validatorChain = validatorChain;
+        this.paymentRepository = paymentRepository;
     }
 
     public BulkUploadResult execute(String templateName, Path file) {
@@ -52,6 +56,9 @@ public class UploadBulkPaymentUseCase {
                 errors.computeIfAbsent(parsedPayment.rowNumber(), row -> new BulkError(
                         row, new ArrayList<>())).errors().addAll(exception.getViolationMessage());
             }
+        }
+        if (errors.isEmpty()) {
+            paymentRepository.saveAll(validPayment);
         }
         return new BulkUploadResult(validPayment.size(), errors.size(), validPayment, List.copyOf(errors.values()));
     }

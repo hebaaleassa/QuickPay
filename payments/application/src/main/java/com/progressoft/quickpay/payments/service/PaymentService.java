@@ -30,12 +30,6 @@ public class PaymentService {
     public BulkUploadResult uploadBulk(String templateName, Path file) {
         log.info("Uploading bulk payments");
         BulkUploadResult result = uploadBulkPaymentUseCase.execute(templateName, file);
-
-        if (result.failureCount() == 0) {
-            for (Payment payment : result.created()) {
-                repository.save(payment);
-            }
-        }
         return result;
     }
 

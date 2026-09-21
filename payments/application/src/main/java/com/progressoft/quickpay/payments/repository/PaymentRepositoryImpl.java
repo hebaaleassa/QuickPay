@@ -45,4 +45,14 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         }
         return payments;
     }
+
+    @Override
+    public void saveAll(List<Payment> payments) {
+        List<PaymentEntity> entities = new ArrayList<>();
+
+        for (Payment payment : payments) {
+            entities.add(paymentMapper.toEntity(payment));
+        }
+        paymentRepositoryJpa.saveAll(entities);
+    }
 }

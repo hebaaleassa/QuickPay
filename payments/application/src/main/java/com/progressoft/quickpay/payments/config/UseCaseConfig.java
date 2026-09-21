@@ -32,8 +32,10 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase, ValidatorChain<Payment> validatorChain) {
-        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain);
+    public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase,
+                                                             ValidatorChain<Payment> validatorChain,
+                                                             PaymentRepository paymentRepository) {
+        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository);
     }
 
     @Bean
@@ -48,7 +50,7 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public GetTemplateUseCase getTemplateUseCase(TemplateRepositoryImpl templates) {
+    public GetTemplateUseCase getTemplateUseCase(TemplateReaderImpl templates) {
         return new GetTemplateUseCase(templates);
     }
 
