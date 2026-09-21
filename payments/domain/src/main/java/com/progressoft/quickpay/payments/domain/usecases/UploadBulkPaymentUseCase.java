@@ -40,7 +40,6 @@ public class UploadBulkPaymentUseCase {
                     error.fieldName(), error.message()));
         }
         List<Payment> validPayment = new ArrayList<>();
-        int createdCount = 0;
         for (ParsedPayment parsedPayment : result.validRows()) {
             try {
                 applyPayment(parsedPayment, validPayment);
@@ -48,13 +47,10 @@ public class UploadBulkPaymentUseCase {
                 getBulkError(errors, parsedPayment.rowNumber()).errors().addAll(exception.getViolationMessage());
             }
         }
-        int validRows = validPayment.size();
-        List<Payment> created = new ArrayList<>();
         if (errors.isEmpty()) {
             paymentRepository.saveAll(validPayment);
-            createdCount = validPayment.size();
         }
-        return new BulkUploadResult(createdCount, validRows, errors.size(), created, List.copyOf(errors.values()));
+        return new BulkUploadResult(validPayment.size(), errors.size(), validPayment, List.copyOf(errors.values()));
     }
 
     private BulkError getBulkError(Map<Integer, BulkError> errors, int error) {

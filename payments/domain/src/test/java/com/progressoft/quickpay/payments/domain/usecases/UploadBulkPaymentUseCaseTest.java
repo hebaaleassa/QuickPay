@@ -41,7 +41,7 @@ class UploadBulkPaymentUseCaseTest {
                 new ParseResult<>(List.of(new ParsedPayment(2, payment)), List.of()));
 
         BulkUploadResult result = useCase().execute("default", file);
-        Assertions.assertEquals(1, result.createdCount());
+        Assertions.assertEquals(1, result.successCount());
         Assertions.assertEquals(0, result.failureCount());
     }
 
