@@ -51,7 +51,7 @@ public class TemplateRepositoryImpl implements TemplateRepositoryInterface {
 
     private TemplateEntity updateFields(TemplateEntity exists, Template template) {
         exists.getFields().clear();
-        exists.getFields().addAll(mapper.toEntity(template).getFields());
+        exists.getFields().addAll(mapper.toEmbeddable(template.fields()));
         return exists;
     }
 }

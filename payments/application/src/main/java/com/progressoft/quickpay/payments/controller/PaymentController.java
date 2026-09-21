@@ -1,6 +1,7 @@
 package com.progressoft.quickpay.payments.controller;
 
 
+import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import com.progressoft.quickpay.payments.resources.BulkUploadRequest;
@@ -48,11 +49,7 @@ public class PaymentController {
     @GetMapping("/{id}")
     public ResponseEntity<PaymentResponse> getOne(@PathVariable Long id) {
         log.info("recieved request for one payment");
-        Payment payment = service.findBy(id).orElse(null);
-        if (payment == null) {
-            log.warn("Payment not found");
-            return ResponseEntity.notFound().build();
-        }
+        Payment payment = service.findBy(id).orElseThrow(() -> new PaymentNotFoundException(id));
 
         return ResponseEntity.ok(mapper.toResponse(payment));
     }
