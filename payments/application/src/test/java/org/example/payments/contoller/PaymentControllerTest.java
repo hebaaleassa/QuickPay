@@ -94,14 +94,4 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
     }
 
-//    @Test
-//    void givenValidRequest_whenUploadPayment_thenReturnOk() throws Exception {
-//        MockMultipartFile file = new MockMultipartFile("file",
-//                "text.csv", MediaType.TEXT_EVENT_STREAM_VALUE,
-//                "amount,currency\n522,USD".getBytes());
-//
-//
-//
-//
-//    }
 }

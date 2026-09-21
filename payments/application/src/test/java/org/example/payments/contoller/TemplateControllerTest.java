@@ -44,6 +44,7 @@ class TemplateControllerTest {
     TemplateResponse response;
 
     String requestBody;
+
     @BeforeEach
     void setUp() {
 
@@ -54,7 +55,7 @@ class TemplateControllerTest {
                                 .name("amount").length(20).required(true).build())).build();
 
 
-         requestBody = """
+        requestBody = """
                 {
                   "name": "payment-default",
                   "requestList": [
@@ -83,8 +84,8 @@ class TemplateControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/templates")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name")
                         .value("payment-default"));
