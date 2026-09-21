@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class BulkUploadResultResponse {
     List<BulkError> failures;
+    private int validRows;
     private int createdCount;
     private int failureCount;
 }

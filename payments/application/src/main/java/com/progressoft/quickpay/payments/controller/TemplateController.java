@@ -57,8 +57,9 @@ public class TemplateController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping
-    public ResponseEntity<TemplateResponse> update(@RequestBody TemplateRequest request){
+    @PutMapping("/{name}")
+    public ResponseEntity<TemplateResponse> update(@PathVariable String name, @RequestBody TemplateRequest request) {
+        request.setName(name);
         log.info("recieved request to update template");
         Template template = mapper.toDomain(request);
         return ResponseEntity.ok(mapper.toResponse(service.update(template)));

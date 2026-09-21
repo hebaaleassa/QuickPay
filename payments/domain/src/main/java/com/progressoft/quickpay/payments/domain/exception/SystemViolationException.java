@@ -20,7 +20,7 @@ public class SystemViolationException extends RuntimeException {
     public List<String> getViolationMessage() {
         List<String> message = new ArrayList<>();
         for (Violation violation : violations) {
-            message.add("[" + violation.violator() + "]" + violation.message());
+            message.add("[" + violation.violator() + "] " + violation.message());
         }
         return message;
     }
