@@ -36,30 +36,37 @@ public class UploadBulkPaymentUseCase {
 
         Map<Integer, BulkError> errors = new TreeMap<>();
         for (ValidationError error : result.errors()) {
-            errors.computeIfAbsent(error.rowNumber(), row -> new BulkError(
-                    row, new ArrayList<>())).errors().add(String.format("%s: %s",
+            getBulkError(errors, error.rowNumber()).errors().add(String.format("%s: %s",
                     error.fieldName(), error.message()));
         }
         List<Payment> validPayment = new ArrayList<>();
 
         for (ParsedPayment parsedPayment : result.validRows()) {
             try {
-                ValidationResult validationResult = validatorChain.validate(parsedPayment.payment());
-                validationResult.throwExceptionIfViolated();
-
-                Payment payment = parsedPayment.payment();
-                payment.setCreatedAt(Instant.now());
-                payment.setStatus(PaymentStatus.PENDING);
-
-                validPayment.add(parsedPayment.payment());
+                applyPayment(parsedPayment, validPayment);
             } catch (SystemViolationException exception) {
-                errors.computeIfAbsent(parsedPayment.rowNumber(), row -> new BulkError(
-                        row, new ArrayList<>())).errors().addAll(exception.getViolationMessage());
+                getBulkError(errors, parsedPayment.rowNumber()).errors().addAll(exception.getViolationMessage());
             }
         }
         if (errors.isEmpty()) {
             paymentRepository.saveAll(validPayment);
         }
         return new BulkUploadResult(validPayment.size(), errors.size(), validPayment, List.copyOf(errors.values()));
+    }
+
+    private BulkError getBulkError(Map<Integer, BulkError> errors, int error) {
+        return errors.computeIfAbsent(error, row -> new BulkError(
+                row, new ArrayList<>()));
+    }
+
+    private void applyPayment(ParsedPayment parsedPayment, List<Payment> validPayment) {
+        ValidationResult validationResult = validatorChain.validate(parsedPayment.payment());
+        validationResult.throwExceptionIfViolated();
+
+        Payment payment = parsedPayment.payment();
+        payment.setCreatedAt(Instant.now());
+        payment.setStatus(PaymentStatus.PENDING);
+
+        validPayment.add(parsedPayment.payment());
     }
 }

@@ -1,9 +1,11 @@
 package com.progressoft.quickpay.payments.service;
 
 import com.progressoft.quickpay.payments.repository.TemplateRepositoryImpl;
-import com.progressoft.training.fileparser.domain.ListTemplatesQuery;
 import com.progressoft.training.fileparser.domain.Template;
-import com.progressoft.training.fileparser.usecase.*;
+import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
+import com.progressoft.training.fileparser.usecase.DeleteTemplateUseCase;
+import com.progressoft.training.fileparser.usecase.GetTemplateUseCase;
+import com.progressoft.training.fileparser.usecase.UpdateTemplateUseCase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +18,16 @@ public class TemplateService {
 
     private final CreateTemplateUseCase createTemplateUseCase;
     private final GetTemplateUseCase getTemplateUseCase;
-    private final ListTemplatesUseCase listTemplatesUseCase;
     private final DeleteTemplateUseCase deleteTemplateUseCase;
     private final TemplateRepositoryImpl templateRepository;
     private final UpdateTemplateUseCase updateTemplateUseCase;
 
-    public TemplateService(CreateTemplateUseCase createTemplateUseCase, GetTemplateUseCase getTemplateUseCase, ListTemplatesUseCase listTemplatesUseCase, DeleteTemplateUseCase deleteTemplateUseCase, TemplateRepositoryImpl templateRepository, UpdateTemplateUseCase updateTemplateUseCase) {
+    public TemplateService(CreateTemplateUseCase createTemplateUseCase, GetTemplateUseCase getTemplateUseCase,
+                           DeleteTemplateUseCase deleteTemplateUseCase, TemplateRepositoryImpl templateRepository,
+                           UpdateTemplateUseCase updateTemplateUseCase) {
 
         this.createTemplateUseCase = createTemplateUseCase;
         this.getTemplateUseCase = getTemplateUseCase;
-        this.listTemplatesUseCase = listTemplatesUseCase;
         this.deleteTemplateUseCase = deleteTemplateUseCase;
         this.templateRepository = templateRepository;
         this.updateTemplateUseCase = updateTemplateUseCase;
@@ -45,7 +47,7 @@ public class TemplateService {
     }
 
     public List<Template> findAll() {
-        return listTemplatesUseCase.execute(new ListTemplatesQuery());
+        return templateRepository.findAll();
     }
 
     public void delete(String name) {

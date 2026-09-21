@@ -1,11 +1,10 @@
 package com.progressoft.quickpay.payments.service;
 
 import com.progressoft.quickpay.payments.TemplateTestData;
-import com.progressoft.training.fileparser.domain.ListTemplatesQuery;
+import com.progressoft.quickpay.payments.repository.TemplateRepositoryImpl;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
 import com.progressoft.training.fileparser.usecase.GetTemplateUseCase;
-import com.progressoft.training.fileparser.usecase.ListTemplatesUseCase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +26,7 @@ class TemplateServiceTest {
     private GetTemplateUseCase getTemplateUseCase;
 
     @Mock
-    private ListTemplatesUseCase listTemplatesUseCase;
+    private TemplateRepositoryImpl templateRepository;
 
     @InjectMocks
     private TemplateService service;
@@ -49,7 +48,8 @@ class TemplateServiceTest {
 
     @Test
     void givenTemplatesExist_whenFindAll_thenReturnAll() {
-        Mockito.when(listTemplatesUseCase.execute(Mockito.any(ListTemplatesQuery.class))).thenReturn(List.of(TemplateTestData.validTemplate()));
+        Template template = TemplateTestData.validTemplate();
+        Mockito.when(templateRepository.findAll()).thenReturn(List.of(template));
         Assertions.assertEquals(1, service.findAll().size());
     }
 }
