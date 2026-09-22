@@ -1,8 +1,12 @@
 package org.example.payments.repository;
 
+import org.example.model.BulkResult;
 import org.example.model.Payment;
 import org.example.payments.mapper.PaymentMapper;
+import org.example.payments.model.PaymentEntity;
+import org.example.payments.service.PaymentService;
 import org.example.repository.PaymentRepository;
+import org.example.useCases.UploadBulkUseCse;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,6 +20,15 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public PaymentRepositoryImpl(PaymentJpaRepository jpaRepository, PaymentMapper mapper) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
+    }
+
+    @Override
+    public List<Payment> saveAll(List<Payment> payments) {
+        List<PaymentEntity> entities = payments.stream().map(mapper::toEntity)
+                .toList();
+
+        List<PaymentEntity> savedAll = jpaRepository.saveAll(entities);
+        return savedAll.stream().map(mapper::toDomain).toList();
     }
 
     @Override

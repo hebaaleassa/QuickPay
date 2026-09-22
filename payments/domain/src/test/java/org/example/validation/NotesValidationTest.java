@@ -4,6 +4,7 @@ import org.example.model.Payment;
 import org.example.model.Violation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NotesValidationTest {
 
-    NotesValidation notesValidation = new NotesValidation();
+    NotesValidation notesValidation = new NotesValidation(500);
     Payment payment =  new Payment();
 
     @BeforeEach

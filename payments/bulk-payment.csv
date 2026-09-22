@@ -1,0 +1,6 @@
+senderAccount,,amount,currency,notes,creditorName
+ACC001,ACC002,125.50,USD,,John Doe
+ACC003,ACC004,75.00,JOD,,Sara Ali
+ACC005,ACC006,-10.00,USD,,Adam Smith
+,ACC008,50.00,USD,,Mona Saleh
+ACC009,ACC010,20.00,usd,,Lina Omar

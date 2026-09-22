@@ -9,5 +9,6 @@
     <include file="changes/003-create-payments-sequence.xml" relativeToChangelogFile="true"/>
     <include file="changes/004-update-notesSize-Payment-Table.xml" relativeToChangelogFile="true"/>
     <include file="changes/005-insert-payment-table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/006-create-template-table.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

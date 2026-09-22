@@ -8,4 +8,5 @@ public interface PaymentRepository {
     Payment save(Payment payment);
     List<Payment> findAll();
     Payment findBy(Long id);
+    List<Payment> saveAll(List<Payment> payments);
 }

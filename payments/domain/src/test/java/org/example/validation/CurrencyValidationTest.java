@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CurrencyValidationTest {
 
     Payment payment =  new Payment();
+    List<String> currencyValue = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -22,11 +24,13 @@ class CurrencyValidationTest {
         payment.setCreditorName("heba hasan");
         payment.setAmount(new BigDecimal("52.2"));
 
+        currencyValue.add("USD");
+        currencyValue.add("EUR");
     }
 
     @Test
     void givenValid_validateCurrency_thenTrue() {
-        CurrencyValidation currencyValidation = new CurrencyValidation();
+        CurrencyValidation currencyValidation = new CurrencyValidation(currencyValue);
         payment.setCurrency("USD");
         List<Violation> validate = currencyValidation.validate(payment);
         assertTrue(validate.isEmpty());
@@ -34,18 +38,18 @@ class CurrencyValidationTest {
 
     @Test
     void givenInvalidLowerCase_validateCurrency_thenFalse() {
-        CurrencyValidation currencyValidation = new CurrencyValidation();
+        CurrencyValidation currencyValidation = new CurrencyValidation(currencyValue);
         payment.setCurrency("usd");
         List<Violation> validate = currencyValidation.validate(payment);
         assertFalse(validate.isEmpty());
-        assertEquals("currency does not match the role of three uppercase letters", validate.get(0).getMessage());
+        assertEquals("currency does not match", validate.get(0).getMessage());
         assertEquals("currency", validate.get(0).getViolation());
 
     }
 
     @Test
     void givenNullCurrency_validateCurrency_thenFalse() {
-        CurrencyValidation currencyValidation = new CurrencyValidation();
+        CurrencyValidation currencyValidation = new CurrencyValidation(currencyValue);
         payment.setCurrency(null);
         List<Violation> validate = currencyValidation.validate(payment);
         assertFalse(validate.isEmpty());
@@ -55,7 +59,7 @@ class CurrencyValidationTest {
     }
     @Test
     void givenEmpty_validateCurrency_thenFalse() {
-        CurrencyValidation currencyValidation = new CurrencyValidation();
+        CurrencyValidation currencyValidation = new CurrencyValidation(currencyValue);
         payment.setCurrency("");
         List<Violation> validate = currencyValidation.validate(payment);
         assertFalse(validate.isEmpty());
@@ -66,7 +70,7 @@ class CurrencyValidationTest {
 
     @Test
     void givenBlankCurrency_validateCurrency_thenFalse() {
-        CurrencyValidation currencyValidation = new CurrencyValidation();
+        CurrencyValidation currencyValidation = new CurrencyValidation(currencyValue);
         payment.setCurrency("   ");
         List<Violation> validate = currencyValidation.validate(payment);
         assertFalse(validate.isEmpty());

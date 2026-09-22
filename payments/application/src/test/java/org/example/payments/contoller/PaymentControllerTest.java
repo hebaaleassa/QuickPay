@@ -1,11 +1,11 @@
 package org.example.payments.contoller;
 
-import org.example.payments.model.PaymentEntity;
 import org.example.payments.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +26,7 @@ import org.example.payments.resource.PaymentResponse;
 
 import static org.mockito.ArgumentMatchers.any;
 import org.example.model.Payment;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(PaymentController.class)
 class PaymentControllerTest {
@@ -38,6 +39,9 @@ class PaymentControllerTest {
 
     @MockitoBean
     private PaymentMapper paymentMapper;
+
+    @MockitoBean
+    private ObjectMapper objectMapper;
 
     private Payment payment;
     private PaymentResponse paymentResponse;
@@ -89,4 +93,5 @@ class PaymentControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L));
     }
+
 }
