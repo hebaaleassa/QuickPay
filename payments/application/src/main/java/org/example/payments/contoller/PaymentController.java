@@ -32,7 +32,7 @@ public class PaymentController {
     private String DefaultTemplateName;
 
     public PaymentController(PaymentService service, PaymentMapper mapper,
-                             ObjectMapper objectMapper,@Value("${payments.template.default-name}") String DefaultTemplateName) {
+                             ObjectMapper objectMapper,@Value("${payments.template.default-name:}") String DefaultTemplateName) {
         this.service = service;
         this.mapper = mapper;
         this.objectMapper = objectMapper;

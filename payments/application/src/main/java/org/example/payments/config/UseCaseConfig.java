@@ -70,7 +70,7 @@ public class UseCaseConfig {
                                              @Qualifier("paymentValidatorChain")
                                              ValidatorChain<Payment> validatorChain,
                                              PaymentRepository repository,
-                                             @Value("${payments.uploud-bulk.save}") Boolean saveIfError
+                                             @Value("${payments.uploud-bulk.save:}") Boolean saveIfError
     ) {
 
         return new UploadBulkUseCse(parseFileUseCase, validatorChain, repository, saveIfError);

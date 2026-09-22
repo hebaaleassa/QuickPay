@@ -23,7 +23,7 @@ public class ValidationConfig {
     }
 
     @Bean
-    public CurrencyValidation currencyValidation(@Value("${payments.currency.default-currency}") List<String> currencyValues ) {
+    public CurrencyValidation currencyValidation(@Value("${payments.currency.default-currency:}") List<String> currencyValues ) {
         return new CurrencyValidation(currencyValues);
     }
 
