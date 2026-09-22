@@ -9,7 +9,7 @@
 
     <changeSet id="006-create-template-table" author="Hebah Aleassa">
         <createTable tableName="templates">
-            <column name="id" type="bigint" autoIncrement="true">
+            <column name="id" type="bigint">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255 ${char})">
@@ -39,6 +39,10 @@
     <addForeignKeyConstraint baseTableName="template_fields" baseColumnNames="template_id"
                                  constraintName="fk_template_fields" referencedTableName="templates"
                                  referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="add-sequence" author="Hebah Aleassa">
+        <createSequence sequenceName="template_sequence" startValue="1" incrementBy="1"/>
     </changeSet>
 
 </databaseChangeLog>

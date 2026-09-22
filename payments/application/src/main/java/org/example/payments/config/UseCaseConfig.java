@@ -13,6 +13,7 @@ import org.example.useCases.CreatePaymentUseCase;
 import org.example.useCases.UploadBulkUseCse;
 import org.example.validation.ValidatorChain;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -66,34 +67,27 @@ public class UseCaseConfig {
 
     @Bean
     public UploadBulkUseCse uploadBulkUseCse(ParseFileUseCase<Payment> parseFileUseCase,
-                                             @Qualifier("paymentValidatorChain") ValidatorChain<Payment> validatorChain,
-                                             PaymentRepository repository
+                                             @Qualifier("paymentValidatorChain")
+                                             ValidatorChain<Payment> validatorChain,
+                                             PaymentRepository repository,
+                                             @Value("${payments.uploud-bulk.save}") Boolean saveIfError
     ) {
 
-        return new UploadBulkUseCse(parseFileUseCase, validatorChain, repository);
+        return new UploadBulkUseCse(parseFileUseCase, validatorChain, repository, saveIfError);
     }
 
     @Bean
-    public CreateTemplateUseCase createTemplateUseCase(@Qualifier("databaseTemplateRepository")
-                                                       TemplateRepositoryImpl repository) {
+    public CreateTemplateUseCase createTemplateUseCase(TemplateRepositoryImpl repository) {
         return new CreateTemplateUseCase(repository);
     }
 
     @Bean
-    public GetTemplateUseCase getTemplateUseCase(
-            @Qualifier("databaseTemplateRepository") TemplateRepositoryImpl repository) {
+    public GetTemplateUseCase getTemplateUseCase(TemplateRepositoryImpl repository) {
         return new GetTemplateUseCase(repository);
     }
 
     @Bean
-    public ListTemplatesUseCase listTemplatesUseCase(
-            @Qualifier("databaseTemplateRepository") TemplateRepositoryImpl repository) {
-        return new ListTemplatesUseCase(repository);
-    }
-
-    @Bean
-    public DeleteTemplateUseCase deleteTemplateUseCase(
-            @Qualifier("databaseTemplateRepository") TemplateRepositoryImpl repository) {
+    public DeleteTemplateUseCase deleteTemplateUseCase(TemplateRepositoryImpl repository) {
         return new DeleteTemplateUseCase(repository);
     }
 

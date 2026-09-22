@@ -16,7 +16,9 @@ import java.util.List;
 public class TemplateEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "template_sequence_gen")
+    @SequenceGenerator(name = "template_sequence_gen"
+    , sequenceName = "template_sequence", allocationSize = 1)
     private Long id;
 
     private String name;

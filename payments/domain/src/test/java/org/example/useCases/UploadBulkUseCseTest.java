@@ -44,15 +44,15 @@ class UploadBulkUseCseTest {
     @Mock
     private PaymentRepository paymentRepository;
 
-    @InjectMocks
     private UploadBulkUseCse useCase;
 
 
-    UploadBulkCommand command;
+    ParseFileUseCase.ParseFileCommand command;
 
     @BeforeEach
     void setUp() {
-        command = new UploadBulkCommand(Path.of("payments.csv"), "payment-default");
+        useCase = new UploadBulkUseCse(parseFileUseCase, validatorChain, paymentRepository, false);
+        command = new ParseFileUseCase.ParseFileCommand("payment-default", Path.of("payments.csv"));
     }
 
     @Test
@@ -67,9 +67,6 @@ class UploadBulkUseCseTest {
 
         when(validatorChain.validate(payment))
                 .thenReturn(validationResult);
-
-        when(paymentRepository.saveAll(anyList()))
-                .thenReturn(List.of(payment));
 
         BulkResult result = useCase.execute(command);
 

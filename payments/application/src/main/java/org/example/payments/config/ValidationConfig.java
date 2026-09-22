@@ -3,6 +3,7 @@ package org.example.payments.config;
 import org.example.model.Payment;
 import org.example.validation.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,13 +23,13 @@ public class ValidationConfig {
     }
 
     @Bean
-    public CurrencyValidation currencyValidation() {
-        return new CurrencyValidation();
+    public CurrencyValidation currencyValidation(@Value("${payments.currency.default-currency}") List<String> currencyValues ) {
+        return new CurrencyValidation(currencyValues);
     }
 
     @Bean
-    public NotesValidation notesValidation() {
-        return new NotesValidation();
+    public NotesValidation notesValidation(@Value("${payments.notes.default-length}") Integer maxLength) {
+        return new NotesValidation(maxLength);
     }
 
     @Bean

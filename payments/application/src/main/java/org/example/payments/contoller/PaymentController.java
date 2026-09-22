@@ -6,6 +6,7 @@ import org.example.payments.resource.BulkUploadResponse;
 import org.example.payments.resource.PaymentRequest;
 import org.example.payments.resource.PaymentResponse;
 import org.example.payments.service.PaymentService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +29,14 @@ public class PaymentController {
     private final PaymentMapper mapper;
     private final ObjectMapper objectMapper;
 
-    public PaymentController(PaymentService service, PaymentMapper mapper, ObjectMapper objectMapper) {
+    private String DefaultTemplateName;
+
+    public PaymentController(PaymentService service, PaymentMapper mapper,
+                             ObjectMapper objectMapper,@Value("${payments.template.default-name}") String DefaultTemplateName) {
         this.service = service;
         this.mapper = mapper;
         this.objectMapper = objectMapper;
+        this.DefaultTemplateName = DefaultTemplateName;
     }
 
     @GetMapping
@@ -64,7 +69,7 @@ public class PaymentController {
 
         try {
             file.transferTo(tempFile);
-            String templateName = GetTempFileName(metadata);
+            String templateName = GetTempFileName(metadata, DefaultTemplateName);
             BulkResult result = service.uploadBulk(templateName, tempFile);
             return new ResponseEntity<>(mapper.toResponse(result), HttpStatus.OK);
         } finally {
@@ -72,9 +77,9 @@ public class PaymentController {
         }
     }
 
-    private String GetTempFileName(String metadata) {
+    private String GetTempFileName(String metadata,  String DefaultTemplateName) {
         if (metadata == null || metadata.isBlank()) {
-            return "payment-default";
+            return DefaultTemplateName;
         }
 
         BulkUploadRequest bulkUploadRequest = objectMapper.readValue(metadata, BulkUploadRequest.class);

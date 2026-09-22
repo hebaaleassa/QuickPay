@@ -38,9 +38,6 @@ class TemplateServiceTest {
     GetTemplateUseCase getTemplateUseCase;
 
     @Mock
-    ListTemplatesUseCase listTemplatesUseCase;
-
-    @Mock
     TemplateRepositoryImpl repository;
 
 

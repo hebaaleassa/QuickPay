@@ -41,15 +41,9 @@ public class TemplateRepositoryImpl implements TemplateRepositoryInterface {
 
     @Override
     public Template save(Template template) {
-
-        Optional<TemplateEntity> existing = templateJpaRepository.findByName(template.name());
-        TemplateEntity entity;
-        if (existing.isPresent()) {
-            entity = existing.get();
-            updateFields(entity, template);
-        } else {
-            entity = mapper.toEntity(template);
-        }
+        TemplateEntity entity = templateJpaRepository.findByName(template.name())
+                .map(exists ->{updateFields(exists, template); return exists;})
+                .orElseGet(()->mapper.toEntity(template));
         TemplateEntity saved = templateJpaRepository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -57,7 +51,7 @@ public class TemplateRepositoryImpl implements TemplateRepositoryInterface {
     private void updateFields(TemplateEntity entity, Template template) {
         entity.setName(template.name());
         entity.getFields().clear();
-        List<TemplateField> entities = template.fields().stream().map(mapper::toEntity).toList();
+        List<TemplateField> entities = mapper.toEntity(template.fields());
         entity.getFields().addAll(entities);
     }
 

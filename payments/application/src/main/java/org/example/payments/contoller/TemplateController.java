@@ -32,13 +32,13 @@ public class TemplateController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/by-name/{name}")
+    @GetMapping("/name/{name}")
     public ResponseEntity<TemplateResponse> getBy(@PathVariable String name) {
         return service.findByName(name).map(mapper::toResponse).map
                 (ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public ResponseEntity<TemplateResponse> getBy(@PathVariable Long id) {
         return service.findBy(id).map(mapper::toResponse).map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

@@ -15,24 +15,24 @@ import org.example.validation.ValidatorChain;
 import java.time.Instant;
 import java.util.*;
 
-public class UploadBulkUseCse implements UseCase<UploadBulkCommand, BulkResult> {
+public class UploadBulkUseCse implements UseCase<ParseFileUseCase.ParseFileCommand, BulkResult> {
 
     private final ParseFileUseCase<Payment> parseFileUseCase;
     private final ValidatorChain<Payment> validatorChain;
     private final PaymentRepository paymentRepository;
+    private final Boolean saveIfError;
 
     public UploadBulkUseCse(ParseFileUseCase<Payment> parseFileUseCase,
                             ValidatorChain<Payment> validatorChain,
-                            PaymentRepository paymentRepository) {
+                            PaymentRepository paymentRepository, boolean saveIfError) {
         this.parseFileUseCase = parseFileUseCase;
         this.validatorChain = validatorChain;
         this.paymentRepository = paymentRepository;
+        this.saveIfError = saveIfError;
     }
 
     @Override
-    public BulkResult execute(UploadBulkCommand input) {
-        ParseFileUseCase.ParseFileCommand parseFileCommand = new ParseFileUseCase.ParseFileCommand(
-                input.fileName(), input.file());
+    public BulkResult execute(ParseFileUseCase.ParseFileCommand parseFileCommand) {
         ParseResult<Payment> result = parseFileUseCase.execute(parseFileCommand);
 
         List<Payment> payments = new ArrayList<>();
@@ -43,7 +43,7 @@ public class UploadBulkUseCse implements UseCase<UploadBulkCommand, BulkResult> 
         int failer = allErrors.size();
         int total = payments.size() + failer;
 
-        if (allErrors.isEmpty()) {
+        if (saveIfError) {
             payments = paymentRepository.saveAll(payments);
         }
         return new BulkResult(total, payments.size(), failer, allErrors, payments);

@@ -16,20 +16,17 @@ public class TemplateService {
     private final CreateTemplateUseCase createTemplateUseCase;
     private final DeleteTemplateUseCase deleteTemplateUseCase;
     private final UpdateTemplateUseCase updateTemplateUseCase;
-    private final ListTemplatesUseCase listTemplatesUseCase;
 
     public TemplateService(TemplateRepositoryImpl repository,
                            GetTemplateUseCase getTemplateUseCase,
                            CreateTemplateUseCase createTemplateUseCase,
                            DeleteTemplateUseCase deleteTemplateUseCase,
-                           UpdateTemplateUseCase updateTemplateUseCase,
-                           ListTemplatesUseCase listTemplatesUseCase) {
+                           UpdateTemplateUseCase updateTemplateUseCase) {
         this.repository = repository;
         this.getTemplateUseCase = getTemplateUseCase;
         this.createTemplateUseCase = createTemplateUseCase;
         this.deleteTemplateUseCase = deleteTemplateUseCase;
         this.updateTemplateUseCase = updateTemplateUseCase;
-        this.listTemplatesUseCase = listTemplatesUseCase;
     }
 
 

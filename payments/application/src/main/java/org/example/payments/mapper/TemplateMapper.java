@@ -13,6 +13,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface TemplateMapper {
 
@@ -25,6 +27,6 @@ public interface TemplateMapper {
     TemplateResponse toResponse(Template template);
 
     TemplateEntity toEntity(Template template);
-    TemplateField toEntity(FieldDefinition fieldDefinition);
+    List<TemplateField> toEntity(List<FieldDefinition> fieldDefinition);
 
 }

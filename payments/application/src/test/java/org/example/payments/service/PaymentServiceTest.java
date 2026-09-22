@@ -1,5 +1,6 @@
 package org.example.payments.service;
 
+import com.progressoft.training.fileparser.usecase.ParseFileUseCase;
 import org.example.model.BulkResult;
 import org.example.model.Payment;
 import org.example.payments.repository.PaymentRepositoryImpl;
@@ -94,7 +95,7 @@ class PaymentServiceTest {
         String fileName = "payment-default";
 
         BulkResult result = new BulkResult(5, 5, 0, Map.of(), List.of());
-        when(uploadBulkUseCase.execute(any(UploadBulkCommand.class))).thenReturn(result);
+        when(uploadBulkUseCase.execute(any(ParseFileUseCase.ParseFileCommand.class))).thenReturn(result);
 
         BulkResult serviceResult = paymentService.uploadBulk(fileName, path);
         assertEquals(result, serviceResult);

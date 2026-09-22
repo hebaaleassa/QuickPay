@@ -12,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TemplateResponse {
-//    private Long id;
     private String name;
     private List<TemplateFieldResponse> requestList;
 

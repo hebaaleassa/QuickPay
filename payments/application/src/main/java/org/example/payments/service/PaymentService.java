@@ -1,5 +1,6 @@
 package org.example.payments.service;
 
+import com.progressoft.training.fileparser.usecase.ParseFileUseCase;
 import org.example.repository.PaymentRepository;
 import org.example.useCases.CreatePaymentUseCase;
 import org.example.useCases.UploadBulkCommand;
@@ -38,7 +39,8 @@ public class PaymentService {
     }
 
     public BulkResult uploadBulk(String fileName, Path tempFile) {
-        UploadBulkCommand command = new UploadBulkCommand(tempFile, fileName);
+//        UploadBulkCommand command = new UploadBulkCommand(tempFile, fileName);
+        ParseFileUseCase.ParseFileCommand command = new ParseFileUseCase.ParseFileCommand(fileName, tempFile);
         return uploadBulkUseCase.execute(command);
 
     }

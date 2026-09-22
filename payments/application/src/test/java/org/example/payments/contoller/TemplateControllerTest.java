@@ -102,8 +102,8 @@ class TemplateControllerTest {
         when(templateService.findByName(template.name())).thenReturn(Optional.of(template));
         when(mapper.toResponse(template)).thenReturn((response));
 
-        mockMvc.perform(get("/api/templates/by-name/{name}", template.name())).andExpect(status().isOk());
-
+        mockMvc.perform(get("/api/templates/name/{name}", template.name()))
+                .andExpect(status().isOk());
 
     }
 
@@ -115,7 +115,8 @@ class TemplateControllerTest {
         when(templateService.findByName(name)).thenReturn(Optional.empty());
         when(mapper.toResponse(template)).thenReturn((response));
 
-        mockMvc.perform(get("/api/templates/by-name/{name}", template.name())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/templates/by-name/{name}", template.name()))
+                .andExpect(status().isNotFound());
 
 
     }
@@ -127,7 +128,7 @@ class TemplateControllerTest {
         when(templateService.findBy(id)).thenReturn(Optional.of(template));
         when(mapper.toResponse(template)).thenReturn((response));
 
-        mockMvc.perform(get("/api/templates/{id}", id)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/templates/id/{id}", id)).andExpect(status().isOk());
     }
 
     @Test
@@ -137,7 +138,7 @@ class TemplateControllerTest {
         when(templateService.findBy(id)).thenReturn(Optional.empty());
         when(mapper.toResponse(template)).thenReturn((response));
 
-        mockMvc.perform(get("/api/templates/{id}", id)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/templates/id/{id}", id)).andExpect(status().isNotFound());
     }
 
     @Test
