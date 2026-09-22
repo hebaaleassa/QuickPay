@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface PaymentRepository {
     void save(Payment payment);
 
-    void saveAll(List<Payment> payments);
+    List<Payment> saveAll(List<Payment> payments);
 
     Optional<Payment> findBy(Long id);
 

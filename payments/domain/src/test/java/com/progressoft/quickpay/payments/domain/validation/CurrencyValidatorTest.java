@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 class CurrencyValidatorTest {
-    private final CurrencyValidator validator = new CurrencyValidator();
+    private final CurrencyValidator validator = new CurrencyValidator(List.of("JOD", "USD", "EUR"));
 
     @Test
     void givenValidCurrency_whenValidate_thenNoViolation() {
@@ -42,7 +42,7 @@ class CurrencyValidatorTest {
         payment.setCurrency("jod");
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
-        Assertions.assertEquals("currency must be 3 upper case characters", violations.get(0).message());
+        Assertions.assertEquals("currency is not supported", violations.get(0).message());
         Assertions.assertEquals("CurrencyValidator", violations.get(0).violator());
     }
 }

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 class NotesValidatorTest {
-    private final NotesValidator validator = new NotesValidator();
+    private final NotesValidator validator = new NotesValidator(500);
 
     @Test
     void givenValidNotes_whenValidate_thenNoViolation() {

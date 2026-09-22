@@ -31,7 +31,7 @@ class UploadBulkPaymentUseCaseTest {
 
     private UploadBulkPaymentUseCase useCase() {
         ValidatorChain<Payment> validatorChain = new ValidatorChain<>(List.of(new AmountValidator()));
-        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository);
+        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository, false);
     }
 
     @Test
