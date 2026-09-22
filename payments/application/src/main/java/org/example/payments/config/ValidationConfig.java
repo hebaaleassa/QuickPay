@@ -28,7 +28,7 @@ public class ValidationConfig {
     }
 
     @Bean
-    public NotesValidation notesValidation(@Value("${payments.notes.default-length}") Integer maxLength) {
+    public NotesValidation notesValidation(@Value("${payments.notes.default-length:}") Integer maxLength) {
         return new NotesValidation(maxLength);
     }
 

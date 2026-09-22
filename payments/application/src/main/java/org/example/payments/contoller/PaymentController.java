@@ -28,8 +28,7 @@ public class PaymentController {
     private final PaymentService service;
     private final PaymentMapper mapper;
     private final ObjectMapper objectMapper;
-
-    private String DefaultTemplateName;
+    private final String DefaultTemplateName;
 
     public PaymentController(PaymentService service, PaymentMapper mapper,
                              ObjectMapper objectMapper,@Value("${payments.template.default-name:}") String DefaultTemplateName) {

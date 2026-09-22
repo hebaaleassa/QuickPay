@@ -59,40 +59,6 @@ class TemplateRepositoryImplTest {
 
 
 
-//    @Test
-//    public void givenExistingTemplate_whenSave_thenUpdateFields() {
-//
-//        List<FieldDefinition> definition =
-//                new ArrayList(new FieldDefinition("amount", 20, true).length());
-//
-//        Template template = new Template("payment-custom", (definition));
-//
-//        TemplateField oldField = new TemplateField();
-//        oldField.setName("old");
-//        List<TemplateField> newField = new ArrayList<>();
-//        newField.setName("amount");
-//
-//        TemplateEntity existing = new TemplateEntity();
-//        existing.setId(1L);
-//        existing.setFields(new ArrayList<>(List.of(oldField)));
-//
-//        when(jpaRepository.findByName("payment-custom"))
-//                .thenReturn(Optional.of(existing));
-//        when(mapper.toEntity(definition)).thenReturn(List.of(newField));
-//        when(jpaRepository.save(existing)).thenReturn(existing);
-//        when(mapper.toDomain(existing)).thenReturn(template);
-//
-//        Template result = repository.save(template);
-//
-//        assertEquals(template, result);
-//        assertEquals(1L, existing.getId());
-//        assertEquals("amount", existing.getFields().get(0).getName());
-//
-//        verify(jpaRepository).save(existing);
-//        verify(mapper, never()).toEntity(template);
-//    }
-
-
     @Test
     public void givenName_whenFindByName_thenFind() {
         TemplateEntity  entity = new TemplateEntity();

@@ -42,7 +42,7 @@ class CurrencyValidationTest {
         payment.setCurrency("usd");
         List<Violation> validate = currencyValidation.validate(payment);
         assertFalse(validate.isEmpty());
-        assertEquals("currency does not match the role of three uppercase letters", validate.get(0).getMessage());
+        assertEquals("currency does not match", validate.get(0).getMessage());
         assertEquals("currency", validate.get(0).getViolation());
 
     }

@@ -10,7 +10,7 @@ import java.util.List;
 
 public class NotesValidation implements Validator<Payment> {
 
-    private Integer maxLength;
+    private final Integer maxLength;
 
     public NotesValidation(Integer maxLength) {
         this.maxLength = maxLength;
@@ -20,7 +20,7 @@ public class NotesValidation implements Validator<Payment> {
     public List<Violation> validate(Payment payment) {
 
         List<Violation> violations = new ArrayList<>();
-        if (payment.getNotes() != null ) {
+        if (payment.getNotes() != null) {
             if (payment.getNotes().length() > maxLength) {
                 violations.add(new Violation("the length is longer than 500", "notes"));
             }

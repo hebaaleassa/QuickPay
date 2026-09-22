@@ -8,7 +8,7 @@ import java.util.List;
 
 public class CurrencyValidation implements Validator<Payment> {
 
-    List<String> currencyValues = new ArrayList<>();
+    private final List<String> currencyValues;
 
     public CurrencyValidation(List<String> currencyValues) {
         this.currencyValues = currencyValues;
@@ -21,9 +21,6 @@ public class CurrencyValidation implements Validator<Payment> {
         } else {
             if (payment.getCurrency().isBlank() || payment.getCurrency().isEmpty()) {
                 violations.add(new Violation("currency is blank", "currency"));
-            }
-            if (!payment.getCurrency().matches("^[A-Z]{3}$")) {
-                violations.add(new Violation("currency does not match the role of three uppercase letters", "currency"));
             }
             if  (!currencyValues.contains(payment.getCurrency())) {
                 violations.add(new Violation("currency does not match", "currency"));
