@@ -31,7 +31,7 @@ public class PaymentController {
     private final PaymentMapper mapper;
     private final PaymentService service;
     private final ObjectMapper objectMapper;
-    @Value("${payments.default-template-name}")
+    @Value("${payments.default-template-name:default}")
     private String defaultTemplate;
 
     public PaymentController(PaymentMapper mapper, PaymentService service, ObjectMapper objectMapper) {

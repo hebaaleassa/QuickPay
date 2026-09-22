@@ -28,13 +28,13 @@ public class ValidatorConfig {
     }
 
     @Bean
-    public CurrencyValidator currencyValidator(@Value("${payments.allowed-currencies}") String allowedCurrencies) {
+    public CurrencyValidator currencyValidator(@Value("${payments.allowed-currencies:JOD,USD,EUR}") String allowedCurrencies) {
         List<String> currency = Arrays.stream(allowedCurrencies.split(",")).map(String::trim).toList();
         return new CurrencyValidator(currency);
     }
 
     @Bean
-    public NotesValidator notesValidator(@Value("${payments.notes-max-length}") int maxLength) {
+    public NotesValidator notesValidator(@Value("${payments.notes-max-length:500}") int maxLength) {
         return new NotesValidator(maxLength);
     }
 

@@ -37,7 +37,7 @@ public class UseCaseConfig {
                                                              @Qualifier("createPaymentValidators")
                                                              ValidatorChain<Payment> validatorChain,
                                                              PaymentRepository paymentRepository,
-                                                             @Value("${payments.persist-db-on-error}") boolean persistDBonError) {
+                                                             @Value("${payments.persist-db-on-error:false}") boolean persistDBonError) {
         return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository, persistDBonError);
     }
 
