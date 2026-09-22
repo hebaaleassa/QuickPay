@@ -2,7 +2,11 @@ package com.progressoft.quickpay.payments.controller;
 
 
 import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
+import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
+import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import com.progressoft.quickpay.payments.resources.BulkUploadRequest;
 import com.progressoft.quickpay.payments.resources.BulkUploadResultResponse;
@@ -19,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -58,15 +63,34 @@ public class PaymentController {
     }
 
     @GetMapping
-    public List<PaymentResponse> getAll() {
-        return service.findAll().stream().map(mapper::toResponse).toList();
+    public List<PaymentResponse> getAll(@RequestParam(defaultValue = "id") String sortBy,
+                                        @RequestParam(defaultValue = "asc") String direction) {
+        return service.findAll(sortBy, direction).stream().map(mapper::toResponse).toList();
+    }
+
+    @GetMapping(params = {"pageNumber", "pageSize"})
+    public PagingResult<PaymentResponse> getPaged(@RequestParam(defaultValue = "0") int pageNumber,
+                                                  @RequestParam(defaultValue = "2") int pageSize) {
+
+        PagingOptions options = new PagingOptions(pageNumber, pageSize);
+        PagingResult<Payment> result = service.findAll(options);
+        List<PaymentResponse> content = result.content().stream().map(mapper::toResponse).toList();
+        return new PagingResult<>(content, result.pageNumber(), result.pageSize(), result.totalElements(), result.totalPages());
+    }
+
+    @GetMapping("/filter")
+    public List<PaymentResponse> getFiltered(@RequestParam(required = false) String currency,
+                                             @RequestParam(required = false) PaymentStatus status,
+                                             @RequestParam(required = false) BigDecimal maxAmount,
+                                             @RequestParam(required = false) BigDecimal minAmount) {
+        PaymentFilter filter = new PaymentFilter(currency, status, maxAmount, minAmount);
+        return service.findAll(filter).stream().map(mapper::toResponse).toList();
     }
 
     @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BulkUploadResultResponse> uploadBulk(
-            @RequestPart("file") MultipartFile file,
-            @RequestPart(value = "metadata", required = false) String metadataJson)
-            throws IOException {
+    public ResponseEntity<BulkUploadResultResponse> uploadBulk(@RequestPart("file") MultipartFile file,
+                                                               @RequestPart(value = "metadata", required = false)
+                                                               String metadataJson) throws IOException {
         log.info("received request to upload bulk payments");
         String templateName = readTemplateName(metadataJson);
         Path tempFile = copyFile(file);

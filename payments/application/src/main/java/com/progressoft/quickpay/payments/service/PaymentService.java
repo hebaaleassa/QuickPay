@@ -1,7 +1,10 @@
 package com.progressoft.quickpay.payments.service;
 
+import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.BulkUploadResult;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.domain.usecases.CreatePaymentUseCase;
 import com.progressoft.quickpay.payments.domain.usecases.UploadBulkPaymentUseCase;
@@ -41,6 +44,18 @@ public class PaymentService {
 
     public List<Payment> findAll() {
         return repository.findAll();
+    }
+
+    public List<Payment> findAll(String sortBy, String direction) {
+        return repository.findAll(sortBy, direction);
+    }
+
+    public PagingResult<Payment> findAll(PagingOptions pagingOptions) {
+        return repository.findAll(pagingOptions);
+    }
+
+    public List<Payment> findAll(PaymentFilter filter) {
+        return repository.findAll(filter);
     }
 
     public Optional<Payment> findBy(Long id) {
