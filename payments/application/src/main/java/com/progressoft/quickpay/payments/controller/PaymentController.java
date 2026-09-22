@@ -10,6 +10,7 @@ import com.progressoft.quickpay.payments.resources.PaymentRequest;
 import com.progressoft.quickpay.payments.resources.PaymentResponse;
 import com.progressoft.quickpay.payments.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,8 @@ public class PaymentController {
     private final PaymentMapper mapper;
     private final PaymentService service;
     private final ObjectMapper objectMapper;
+    @Value("${payments.default-template-name:default}")
+    private String defaultTemplate;
 
     public PaymentController(PaymentMapper mapper, PaymentService service, ObjectMapper objectMapper) {
         this.mapper = mapper;
@@ -82,7 +85,7 @@ public class PaymentController {
 
     private String readTemplateName(String json) throws IOException {
         if (json == null || json.isBlank()) {
-            return "default";
+            return defaultTemplate;
         }
         BulkUploadRequest request = objectMapper.readValue(json, BulkUploadRequest.class);
         return request.getTemplateName();

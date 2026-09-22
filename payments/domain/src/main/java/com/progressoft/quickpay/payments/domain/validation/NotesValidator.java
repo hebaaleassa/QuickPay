@@ -8,12 +8,18 @@ import java.util.List;
 
 public class NotesValidator implements Validator<Payment> {
 
+    private final int maxLength;
+
+    public NotesValidator(int maxLength) {
+        this.maxLength = maxLength;
+    }
+
     @Override
     public List<Violation> validate(Payment payment) {
         List<Violation> violations = new ArrayList<>();
         String notes = payment.getNotes();
-        if (notes != null && notes.trim().length() > 500) {
-            return List.of(new Violation("notes length should be less than 500", "NotesValidator"));
+        if (notes != null && notes.trim().length() > maxLength) {
+            return List.of(new Violation("notes length should be less than " + maxLength, "NotesValidator"));
         }
         return List.of();
     }

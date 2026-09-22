@@ -13,6 +13,7 @@ import com.progressoft.training.fileparser.parser.FileParserFactory;
 import com.progressoft.training.fileparser.repository.JsonTemplateRepository;
 import com.progressoft.training.fileparser.usecase.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,9 +34,11 @@ public class UseCaseConfig {
 
     @Bean
     public UploadBulkPaymentUseCase uploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase,
+                                                             @Qualifier("createPaymentValidators")
                                                              ValidatorChain<Payment> validatorChain,
-                                                             PaymentRepository paymentRepository) {
-        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository);
+                                                             PaymentRepository paymentRepository,
+                                                             @Value("${payments.persist-db-on-error:false}") boolean persistDBonError) {
+        return new UploadBulkPaymentUseCase(parseFileUseCase, validatorChain, paymentRepository, persistDBonError);
     }
 
     @Bean

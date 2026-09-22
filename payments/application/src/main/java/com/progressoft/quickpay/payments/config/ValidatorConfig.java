@@ -2,9 +2,11 @@ package com.progressoft.quickpay.payments.config;
 
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.validation.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -26,13 +28,14 @@ public class ValidatorConfig {
     }
 
     @Bean
-    public CurrencyValidator currencyValidator() {
-        return new CurrencyValidator();
+    public CurrencyValidator currencyValidator(@Value("${payments.allowed-currencies:JOD,USD,EUR}") String allowedCurrencies) {
+        List<String> currency = Arrays.stream(allowedCurrencies.split(",")).map(String::trim).toList();
+        return new CurrencyValidator(currency);
     }
 
     @Bean
-    public NotesValidator notesValidator() {
-        return new NotesValidator();
+    public NotesValidator notesValidator(@Value("${payments.notes-max-length:500}") int maxLength) {
+        return new NotesValidator(maxLength);
     }
 
     @Bean

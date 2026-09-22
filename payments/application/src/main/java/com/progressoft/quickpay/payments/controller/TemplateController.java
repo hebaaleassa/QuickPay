@@ -5,6 +5,7 @@ import com.progressoft.quickpay.payments.resources.template.TemplateRequest;
 import com.progressoft.quickpay.payments.resources.template.TemplateResponse;
 import com.progressoft.quickpay.payments.service.TemplateService;
 import com.progressoft.training.fileparser.domain.Template;
+import com.progressoft.training.fileparser.exception.TemplateNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,13 +42,13 @@ public class TemplateController {
     @GetMapping("/{id}")
     public ResponseEntity<TemplateResponse> getById(@PathVariable Long id) {
 
-        return service.findById(id).map(mapper::toResponse).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return service.findById(id).map(mapper::toResponse).map(ResponseEntity::ok).orElseThrow(() -> new TemplateNotFoundException(id.toString()));
     }
 
     @GetMapping("/name/{name}")
     public ResponseEntity<TemplateResponse> getByName(@PathVariable String name) {
 
-        return service.findByName(name).map(mapper::toResponse).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return service.findByName(name).map(mapper::toResponse).map(ResponseEntity::ok).orElseThrow(() -> new TemplateNotFoundException(name));
     }
 
     @DeleteMapping("/{name}")

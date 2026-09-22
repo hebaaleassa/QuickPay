@@ -22,13 +22,15 @@ public class UploadBulkPaymentUseCase {
     private final ParseFileUseCase<ParsedPayment> parseFileUseCase;
     private final ValidatorChain<Payment> validatorChain;
     private final PaymentRepository paymentRepository;
+    private final boolean presistDBonError;
 
     public UploadBulkPaymentUseCase(ParseFileUseCase<ParsedPayment> parseFileUseCase,
                                     ValidatorChain<Payment> validatorChain,
-                                    PaymentRepository paymentRepository) {
+                                    PaymentRepository paymentRepository, boolean presistDBonError) {
         this.parseFileUseCase = parseFileUseCase;
         this.validatorChain = validatorChain;
         this.paymentRepository = paymentRepository;
+        this.presistDBonError = presistDBonError;
     }
 
     public BulkUploadResult execute(String templateName, Path file) {
@@ -47,10 +49,11 @@ public class UploadBulkPaymentUseCase {
                 getBulkError(errors, parsedPayment.rowNumber()).errors().addAll(exception.getViolationMessage());
             }
         }
-        if (errors.isEmpty()) {
-            paymentRepository.saveAll(validPayment);
+        List<Payment> resultPayments = validPayment;
+        if (errors.isEmpty() || presistDBonError) {
+            resultPayments = paymentRepository.saveAll(validPayment);
         }
-        return new BulkUploadResult(validPayment.size(), errors.size(), validPayment, List.copyOf(errors.values()));
+        return new BulkUploadResult(validPayment.size(), errors.size(), resultPayments, List.copyOf(errors.values()));
     }
 
     private BulkError getBulkError(Map<Integer, BulkError> errors, int error) {

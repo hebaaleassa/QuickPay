@@ -38,8 +38,8 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
-    public void saveAll(List<Payment> payments) {
+    public List<Payment> saveAll(List<Payment> payments) {
         List<PaymentEntity> entities = payments.stream().map(paymentMapper::toEntity).toList();
-        paymentRepositoryJpa.saveAll(entities);
+        return paymentRepositoryJpa.saveAll(entities).stream().map(paymentMapper::toDomain).toList();
     }
 }
