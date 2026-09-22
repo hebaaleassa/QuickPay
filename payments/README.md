@@ -1,251 +1,269 @@
-# Phase 3 — Day 5: Bulk File Import & Template Management
+# Day 7 — Spring Profiles & Environment-Specific Configuration
 
-Builds directly on Phase 2 (`PROJECT-PLAN-PHASE-2.md`) — same `payments` app, same clean-architecture
-rules from that phase still apply: `domain` has zero Spring/JPA dependency, validation lives in
-`domain` and is enforced the moment a `Payment` is created, and the controller never touches
-persistence types directly. None of that goes away just because a new feature is landing on top.
+## Goal
 
-## Context
+Learn how to make one codebase, one jar, behave differently depending on where it runs — different
+config values, and even different bean implementations — without an `if` statement anywhere and
+without a rebuild. That means: multiple properties files and how they layer, `@Profile` for swapping
+which bean gets registered, `@Primary` for the different problem of breaking a tie between
+candidates, and Liquibase's own equivalent of the same idea — `context` — so your schema migrations
+can be environment-aware too.
 
-You previously built a small, separate file-parsing library (`file-parser-core`) that already
-knows how to: read a delimited file, validate each row against a named "template" (a set of expected
-fields — name, length, required or optional), and hand you back the rows that passed along with the
-ones that failed and why. It also already ships its own use cases for managing templates (create /
-get / update / delete / list). You are not writing any of that parsing or validation logic
-yourselves — only figuring out how to wire it into this app correctly, and where the pieces belong.
+## Why it matters
 
-## Goal — today's flow, in this order
+Every real service runs in more than one place: your machine, CI, staging, a specific customer's
+environment. Each of those needs slightly different behavior — a different database URL, a stub
+integration instead of a real one, seed data that should only ever exist in dev. Hard-coding any of
+that, or branching on an environment variable inside your business logic, doesn't scale past the
+second environment. Profiles are Spring's answer: pick the environment at *startup*, and let
+Spring/Liquibase wire in whatever that environment needs.
 
-### 1. Bulk transfer upload, against one fixed default template
+## Concept walkthrough
 
-#### Concept: multipart requests (uploading a file over HTTP)
+### 1. Multiple properties files — the layering, with sample code
 
-A file doesn't travel in a JSON body — it needs a `multipart/form-data` request, where the body is
-split into named parts (one part can be a file, another can be plain text or JSON). Spring MVC binds
-each part to a controller parameter with `@RequestPart`:
+`application.properties` always loads. A file named `application-<profile>.properties` loads
+*in addition*, only when that profile is active — and where both define the same key, **the
+profile-specific value wins**.
+
+```properties
+# application.properties — the defaults, always applied
+spring.application.name=payments
+payments.default-currency=USD
+payments.bulk-max-rows=1000
+```
+
+```properties
+# application-customerA.properties — only applied when "customerA" is active
+payments.default-currency=JOD
+```
+
+```properties
+# application-customerB.properties — only applied when "customerB" is active
+payments.default-currency=EUR
+```
+
+Activate one at startup:
+
+```bash
+java -jar app.jar --spring.profiles.active=customerA
+# or, during development:
+mvn spring-boot:run -Dspring-boot.run.profiles=customerA
+```
+
+With no profile passed at all, Spring Boot logs `No active profile set, falling back to 1 default
+profile: "default"` — only the base file applies, `payments.default-currency` stays `USD`. Reading
+the resolved value back out is the same `@Value` you've already seen:
 
 ```java
-@PostMapping(value = "/api/payments/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<?> uploadBulk(@RequestPart("file") MultipartFile file) throws IOException {
-    Path tempFile = Files.createTempFile("upload-", "-" + file.getOriginalFilename());
-    file.transferTo(tempFile);
-    // hand tempFile to the file-parser library from here
+@Service
+public class PaymentService {
+    @Value("${payments.default-currency}")
+    private String defaultCurrency;
 }
 ```
 
-`MultipartFile` gives you `getOriginalFilename()`, `getInputStream()`, and `transferTo(Path)` — the
-library needs an actual file `Path` to parse, so writing the upload to a temp file (and deleting it
-once you're done) is the normal pattern here.
+The property doesn't know or care which file it came from by the time `@Value` resolves it — that's
+the whole point: your code stays identical, only the active profile changes what gets injected.
 
-One thing to watch for once you get to step 3, where the request also needs to carry a template
-name alongside the file: if you bind that second part straight to your own request DTO —
-`@RequestPart(...) YourDto metadata` — it'll work fine from `curl` with an explicit
-`type=application/json` on that part, but tools like Postman send form-data text fields as
-`text/plain` by default, with no easy way to change it. Spring can't find a converter from
-`text/plain` to your DTO, so you'll get a `415 Unsupported Media Type` — not because your code is
-wrong, but because of what content-type the client happened to send. Binding that part as a plain
-`String` instead, and parsing the JSON yourself inside the method, sidesteps the problem entirely
-regardless of what content-type the client sends:
+### 2. `@Profile` — swapping which bean gets registered
+
+Properties files change *values*. `@Profile` changes something bigger: **which class Spring
+instantiates at all**. Put it on a `@Component`/`@Service`/`@Bean` and that bean is only ever created
+when a matching profile is active — non-matching ones aren't just unused, they're never constructed:
 
 ```java
-@RequestPart(value = "metadata", required = false) String metadataJson
+public interface NotificationSender {
+    void send(String message);
+}
+
+@Component
+@Profile("dev")
+public class ConsoleNotificationSender implements NotificationSender {
+    @Override
+    public void send(String message) {
+        System.out.println("[DEV] " + message);
+    }
+}
+
+@Component
+@Profile("prod")
+public class EmailNotificationSender implements NotificationSender {
+    @Override
+    public void send(String message) {
+        // real email/SMS integration lives here
+    }
+}
 ```
 
-Add a new API that accepts a CSV file upload and creates a payment for every valid row in it — the
-exact same way the single-transfer API creates one. That means every row goes through the same
-domain validation and the same use case a single transfer goes through. No separate "bulk"
-validation path, no shortcuts — a row that wouldn't pass as a single transfer must not be allowed to
-slip through as part of a bulk upload either.
+Anything that just injects `NotificationSender` (a constructor parameter, a `@RequiredArgsConstructor`
+field) never has to know which one it got — that's decided entirely by which profile started the app.
 
-Don't worry yet about letting the caller choose a template. Define one fixed, default set of fields
-as a JSON file under your resources, and read it into the app at startup. The shape of that default
-template should live in that one resource file — not scattered across Java code as hardcoded field
-definitions.
+A few things worth being precise about:
 
-Prove it end to end: a CSV with a few valid rows and a few deliberately invalid ones should report
-which succeeded and which failed, and only the valid ones should actually show up if you list
-payments afterward.
+- **Combine profiles**: `@Profile({"dev", "test"})` is an OR (active if either is active).
+  `@Profile("!prod")` is a negation (active whenever `prod` is *not* active) — a common way to write
+  "everything except production" once, instead of listing every non-prod profile by name.
+- **The gotcha you will hit**: if *no* active profile matches any `@Profile` on a given interface's
+  implementations, **no bean gets created at all** — not a default, not a no-op, nothing. Injecting
+  `NotificationSender` then fails at startup with `NoSuchBeanDefinitionException`, not a runtime
+  surprise later. This is `@Profile`'s version of a compile error: it fails loud, at boot, which is
+  exactly what you want instead of silently running with nothing wired in.
+- **`@Profile("default")`** is special — it means "active only when *no* profile was explicitly set,"
+  i.e. exactly the fallback case above. That's a legitimate way to give an interface a genuine default
+  implementation for local/no-profile runs, while `dev`/`prod`/`customerA` etc. each override it.
 
-### 2. Template management, backed by our own database
+### 3. `@Primary` — a different problem: breaking a tie, not choosing by environment
 
-#### Concept: `@Embeddable` — value types with no identity of their own
+`@Profile` decides *whether* a bean exists for the current environment. `@Primary` solves a completely
+different problem: **more than one bean of the same type is already active at once**, and a plain
+injection point (no `@Qualifier`) needs Spring to pick one without throwing
+`NoUniqueBeanDefinitionException`.
 
-You'll need this for what follows, so it's worth knowing upfront: JPA has a way to model a class
-that has no identity of its own — no `@Id`, can't be looked up or saved independently, and only ever
-makes sense as *part of* something else. That's an `@Embeddable`.
+This comes up more than it sounds like it should — two profiles active together
+(`spring.profiles.active=dev,test`), or two implementations that were never profile-gated in the
+first place:
 
 ```java
-@Embeddable
-public class Address {
-    private String street;
-    private String city;
-    private String postalCode;
-    // getters/setters
+public interface FeeCalculator {
+    BigDecimal calculate(BigDecimal amount);
 }
 
-@Entity
-public class Customer {
-    @Id
-    @GeneratedValue
-    private Long id;
+@Component
+@Primary
+public class StandardFeeCalculator implements FeeCalculator { /* ... */ }
 
-    private String name;
-
-    @Embedded
-    private Address address;
-}
+@Component
+public class PromotionalFeeCalculator implements FeeCalculator { /* ... */ }
 ```
 
-Notice `Address` has no `@Id`. There's no `AddressRepository`, and you can't fetch an `Address` on
-its own. When Hibernate creates the schema for this, there's no separate `address` table at all —
-`street`, `city`, and `postal_code` just become extra columns directly on the `customer` table
-itself:
-
-```
-customer
---------
-id
-name
-street
-city
-postal_code
-```
-
-That's the point of `@Embeddable`: it's a value — a bundle of columns that describes something about
-its owner — not a "thing" with its own existence. `@Embedded` (used above, on the `Customer` side)
-folds exactly **one** instance of that value into the owner's own table.
-
-That covers a single embedded value. It doesn't yet cover what you actually need below — a *list* of
-these value objects per owner, living in a table of their own rather than flattened as columns.
-
-#### Concept: `@ElementCollection` — a *list* of embeddable values
-
-`@Embedded` folds one value into the owner's own table. When you need **many** of that same value
-type per owner — still values, still no identity of their own, just more than one — that's what
-`@ElementCollection` is for. This is exactly the shape a `Template` is: a name, plus several field
-definitions.
+Anywhere that just injects `FeeCalculator feeCalculator` gets `StandardFeeCalculator` — `@Primary`
+is the tie-breaker default. The one place that specifically needs the other one asks for it by name:
 
 ```java
-@Embeddable
-public class TemplateField {
-    private String name;
-    private int length;
-    private boolean required;
-    // getters/setters
-}
-
-@Entity
-public class Template {
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    private String name;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "template_fields", joinColumns = @JoinColumn(name = "template_id"))
-    private List<TemplateField> fields = new ArrayList<>();
-}
+public PaymentService(@Qualifier("promotionalFeeCalculator") FeeCalculator feeCalculator) { ... }
 ```
 
-Two annotations are doing the work here:
+**When to actually reach for `@Primary` vs. `@Profile`**: if only one implementation should ever
+exist for a given environment, that's `@Profile` — there's no ambiguity to break, because only one
+candidate is ever in the context. Reach for `@Primary` when multiple implementations are
+*legitimately* active at the same time and you want a sensible default for most callers, with
+specific callers opting into the non-default one via `@Qualifier`. Using `@Primary` to paper over
+what should really be `@Profile` (e.g. marking the "prod" bean `@Primary` instead of profile-gating
+the others) just means all the other implementations are silently sitting in the context too,
+findable by anyone with a `@Qualifier` — not what you want for something like a fake vs. real payment
+gateway.
 
-- **`@ElementCollection`** — tells Hibernate "this field is a collection of values (or embeddables),
-  not a collection of other entities." Unlike a real `@OneToMany` to another `@Entity`, each
-  `TemplateField` has no identity of its own and can never be fetched, saved, or referenced
-  independently of its owner — it only ever exists as part of this one `Template`.
-- **`@CollectionTable(name = ..., joinColumns = @JoinColumn(name = ...))`** — says *where* those
-  field definitions actually live. Since there's more than one per template, they can't be flattened
-  into the parent's own row like `@Embedded` did — Hibernate needs a separate table
-  (`template_fields` here), with a foreign key column (`template_id`) pointing back to the owning
-  `Template` row. Without this annotation Hibernate will still make up a table and column name for
-  you, but naming them explicitly matters here because you're also going to hand-write the matching
-  Liquibase changeset yourself — the names on both sides have to agree exactly.
+### 4. Liquibase `context` — the same idea, for migrations
 
-That resulting schema is a completely ordinary one-to-many at the SQL level:
+Spring beans aren't the only thing that should differ per environment — schema changes can too: seed
+data that should only exist in dev, or a changeset that only makes sense before a customer-specific
+migration. Liquibase's `context` attribute on a `<changeSet>` is its own, independent version of
+exactly the same concept as `@Profile`:
 
-```
-templates                   template_fields
----------                   ----------------
-id                          template_id (FK -> templates.id)
-name                        name / length / required
-```
+```xml
+<changeSet id="3" author="jane">
+    <createTable tableName="templates">
+        <!-- runs everywhere, no context specified -->
+    </createTable>
+</changeSet>
 
-#### Concept: eager vs. lazy loading
-
-Notice the example above has `fetch = FetchType.EAGER` spelled out explicitly. By default, JPA
-collections (`@ElementCollection` included) are **lazy**: Hibernate does *not* run the query to load
-`fields` when it loads the `Template` — only the first time your code actually calls
-`template.getFields()`. If that first access happens while the same database session/transaction
-that loaded the `Template` is still open, it works transparently, invisibly running a second query
-right when you need it. If it happens *after* that session has already closed — for example, the
-`Template` was returned from a repository call, and something later (in a different method, a
-different thread, or a Spring startup runner with no transaction of its own) tries to read
-`fields` — Hibernate has nothing left to fetch from and throws:
-
-```
-org.hibernate.LazyInitializationException: failed to lazily initialize a collection: could not initialize proxy - no Session
+<changeSet id="4" author="jane" context="dev">
+    <insert tableName="templates">
+        <column name="name" value="sample-template"/>
+    </insert>
+</changeSet>
 ```
 
-**Eager** fetching (`fetch = FetchType.EAGER`) tells Hibernate to load the collection immediately,
-right alongside the owner, so it's always fully populated the moment you get the `Template` object
-back — no matter where or when you read it afterward. The tradeoff: it's always loaded, even on the
-many calls where you never actually needed those field definitions, which can matter for a large or
-rarely-used collection.
+A changeset with no `context` always runs. One with a `context` only runs when that context is
+active for the current execution — controlled by a property, most naturally tied straight to the
+active Spring profile:
 
-So which one do you want, and when:
-- Reach for **lazy** (the default) when the collection can be large, or is only needed some of the
-  time — loading it on every single fetch of the parent would be wasted work. You just have to make
-  sure you only ever touch it from code that's guaranteed to still be inside an open session/transaction.
-- Reach for **eager** when the collection is small and is *always* needed together with the owner —
-  when there's no realistic scenario where the owner makes sense without it. Is a `Template` without
-  its `fields` ever actually useful on its own? That's your answer for which one fits here.
+```properties
+spring.liquibase.contexts=${spring.profiles.active}
+```
 
-Once single-transfer and bulk-transfer both work, turn "templates" into a first-class, manageable
-resource in this app instead of just the one fixed default from step 1.
+With that in place, starting the app under `dev` runs changeset 4 (seed data) as well as changeset 3;
+starting it under `prod` (or with no profile at all) skips changeset 4 entirely — same database
+migration history, no seed rows ever touching a real environment. Context expressions support the
+same combinators you just saw on `@Profile`: `context="dev or test"`, `context="!prod"`.
 
-Add APIs to:
-- create a template
-- delete a template
-- list all templates
-- get a single template, both by id and by name
+The parallel worth holding onto: `@Profile` decides which *beans* exist for this run; Liquibase
+`context` decides which *changesets* run for this run. Two different subsystems, the same underlying
+question — "what environment am I in right now" — answered once (the active profile) and threaded
+through both.
 
-The library also ships an update-template use case — you don't need to wire it up today, just know
-it's there for when this feature grows further.
+## Core exercises
 
-Important: the file-parser library ships its own default template storage, but it's in-memory —
-nothing survives a restart. You must **not** use that for this. Templates need to be persisted in
-our own database, designed and migrated like any other piece of state in this app.
+### Exercise 1 — Two implementations, one interface, gated by `@Profile`
 
-A template isn't one flat thing — it's a name plus an *ordered* list of field definitions, each with
-its own name/length/required-ness. Design your `templates` and template-fields tables around that,
-and write the Liquibase changesets for both yourself — Liquibase won't infer a table structure from
-your Java annotations, so the schema and the JPA mapping have to agree on table names, the foreign
-key column, and everything else, by construction, not by accident. One thing you'll need to solve
-that hasn't come up yet: a CSV's columns have to line up with your template's fields in that exact
-order, so figure out how to guarantee a field list mapped out of a database table comes back in the
-same order it went in — that isn't guaranteed by default.
+Create a small interface with two implementations (like `NotificationSender` above), gate them with
+`@Profile`, inject the interface somewhere it gets called, and run your app under each profile in
+turn. Prove — by observing actual behavior (a log line, a response), not by reading your own code —
+that a different implementation ran each time.
 
-### 3. Let bulk upload actually use a chosen template
+### Exercise 2 — Hit the "no matching bean" error on purpose
 
-Once template management exists, go back to the bulk upload API from step 1 and let the request
-optionally name which template to parse the file against.
+Start your app with a profile active that matches *neither* of your two `@Profile` values from
+Exercise 1 (e.g. `-Dspring-boot.run.profiles=staging`). Read the actual `NoSuchBeanDefinitionException`
+Spring gives you. Then fix it by adding an `@Profile("default")` implementation, and confirm running
+with *no* profile at all now uses it.
 
-- Caller names a template that exists → use it.
-- Caller names a template that does **not** exist → reject the request; don't silently substitute
-  something else. That's a mistake worth surfacing, not hiding.
-- Caller doesn't name one at all → use the default template from step 1.
+### Exercise 3 — Hit the ambiguity error on purpose, then fix it with `@Primary`
 
-## Done means
+Temporarily remove the `@Profile` annotations from Exercise 1's two beans so both are active
+simultaneously. Confirm you get `NoUniqueBeanDefinitionException` at startup. Fix it by adding
+`@Primary` to one of them. Then add a second, explicit injection point that uses
+`@Qualifier(...)` to deliberately get the *other* (non-primary) one, and confirm both injection
+points really did get different beans.
 
-- Bulk upload creates payments through the exact same domain validation and use case as the
-  single-transfer API — proven by uploading a CSV with both valid and intentionally invalid rows and
-  confirming only the valid ones were created.
-- The default template's field definitions live in a resource file, not hardcoded in Java.
-- Templates can be created, deleted, listed, and fetched by id or name via the API, and none of that
-  data disappears on a restart.
-- Bulk upload accepts an optional template name: an existing one is honored, an omitted one falls
-  back to the default, and a named-but-nonexistent one is rejected rather than silently swapped for
-  the default.
-- `domain` still has zero Spring/JPA dependency, and the controller still never touches persistence
-  types directly.
+### Exercise 4 — A real setting, driven by profile
+
+Pick one real value in your project (a default currency, a fee, a limit). Move it into
+`application.properties` with a sensible default, then add two `application-<name>.properties` files
+overriding it differently. Run under each and confirm — via your running application, not by reading
+the file — that the value actually changed.
+
+### Exercise 5 — Liquibase context
+
+Add a new changeset with a `context` attribute (seed data is a good candidate). Set
+`spring.liquibase.contexts=${spring.profiles.active}`. Run your app under a profile that matches the
+context and confirm (H2 console, or a `GET` that lists the seeded row) that it ran. Run it again under
+a different profile and confirm it didn't.
+
+## Stretch exercises (if you finish early)
+
+- Write a context expression combining two contexts (`context="dev or test"`) and confirm it runs
+  under either.
+- Write a `@Profile("!prod")` bean and confirm it's active under `dev`, under no profile at all, and
+  inactive only under `prod`.
+- Activate two profiles at once (`-Dspring-boot.run.profiles=dev,test`) and check which
+  profile-specific properties file "wins" when both define the same key — read the Spring Boot docs
+  on activation order rather than guessing.
+
+## Done checklist
+
+- [x] I can explain how a value in `application-<profile>.properties` overrides the same key in
+  `application.properties`, and only when that profile is active.
+- [x] I can explain what `@Profile` actually controls (whether a bean is created at all) versus what
+  a properties file controls (a value inside a bean that already exists).
+- [x] I hit `NoSuchBeanDefinitionException` from an unmatched profile on purpose, and can explain why
+  it happens instead of some default silently being used.
+- [x] I can explain what `@Profile("default")` specifically means, and when it does or doesn't apply.
+- [x] I hit `NoUniqueBeanDefinitionException` from two active, ungated beans on purpose, and fixed it
+  with `@Primary`.
+- [x] I can explain, in my own words, when a problem calls for `@Profile` versus when it calls for
+  `@Primary` — they solve different problems even though both involve "more than one bean".
+- [x] I can explain what `@Qualifier` does at an injection point, and why it can still reach a
+  non-`@Primary` bean.
+- [x] I can explain what a Liquibase `context` is, and that it's answering the same "which
+  environment" question as `@Profile` — just for changesets instead of beans.
+- [x] I wired `spring.liquibase.contexts` to my active Spring profile and proved a context-gated
+  changeset only runs when its context is active.
+
+## Suggested resources
+
+- Spring Boot reference, "Profiles" — https://docs.spring.io/spring-boot/reference/features/profiles.html
+- Spring Framework reference, "Bean Definition Profiles" (`@Profile`) — https://docs.spring.io/spring-framework/reference/core/beans/environment.html
+- Baeldung, "Spring @Primary Annotation" — https://www.baeldung.com/spring-primary
+- Liquibase documentation, "Contexts" — https://docs.liquibase.com/concepts/changelogs/attributes/contexts.html

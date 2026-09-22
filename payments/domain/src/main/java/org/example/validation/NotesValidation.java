@@ -12,7 +12,7 @@ public class NotesValidation implements Validator<Payment> {
     public List<Violation> validate(Payment payment) {
 
         List<Violation> violations = new ArrayList<>();
-        if (!payment.getNotes().isEmpty()) {
+        if (payment.getNotes() != null ) {
             if (payment.getNotes().length() > 500) {
                 violations.add(new Violation("the length is longer than 500", "notes"));
             }
