@@ -1,269 +1,356 @@
-# Day 7 — Spring Profiles & Environment-Specific Configuration
+# Day 9 — Docker & Docker Compose
 
 ## Goal
 
-Learn how to make one codebase, one jar, behave differently depending on where it runs — different
-config values, and even different bean implementations — without an `if` statement anywhere and
-without a rebuild. That means: multiple properties files and how they layer, `@Profile` for swapping
-which bean gets registered, `@Primary` for the different problem of breaking a tie between
-candidates, and Liquibase's own equivalent of the same idea — `context` — so your schema migrations
-can be environment-aware too.
+Get the app running the exact same way on any machine — yours, a teammate's, a server — without anyone
+having to manually install a JDK, Postgres, or match your exact OS. That means understanding what Docker
+actually is, what a Dockerfile does versus what Docker Compose does, how to package this specific app into
+an image, how to run just the database in Docker while the app itself runs locally from your IDE, and how
+to hand a fully working, already-built app to someone else with nothing more than one file.
 
 ## Why it matters
 
-Every real service runs in more than one place: your machine, CI, staging, a specific customer's
-environment. Each of those needs slightly different behavior — a different database URL, a stub
-integration instead of a real one, seed data that should only ever exist in dev. Hard-coding any of
-that, or branching on an environment variable inside your business logic, doesn't scale past the
-second environment. Profiles are Spring's answer: pick the environment at *startup*, and let
-Spring/Liquibase wire in whatever that environment needs.
+"Works on my machine" is the single most common source of wasted time in a team: a different Java version,
+a database nobody remembers how to install, a config value only you have set correctly. Docker doesn't
+fix your code — it freezes the *environment* your code runs in, so the environment stops being a variable.
+Once you can dockerize a service, you can also read and reason about how every real deployment (including
+the one your own team ships in production) actually works, since it's the same underlying idea — just with
+more tooling layered on top for scale.
 
 ## Concept walkthrough
 
-### 1. Multiple properties files — the layering, with sample code
+### 1. What Docker actually is
 
-`application.properties` always loads. A file named `application-<profile>.properties` loads
-*in addition*, only when that profile is active — and where both define the same key, **the
-profile-specific value wins**.
+Docker packages an application together with everything it needs to run — the JRE, libraries, OS-level
+dependencies — into a single unit called an **image**. Running that image gives you a **container**: an
+isolated process that behaves identically regardless of which machine it's running on.
 
-```properties
-# application.properties — the defaults, always applied
-spring.application.name=payments
-payments.default-currency=USD
-payments.bulk-max-rows=1000
+A few pieces of vocabulary you need before anything else makes sense:
+
+- **Image** — a built, frozen template (like a class). Doesn't run by itself.
+- **Container** — a running instance of an image (like an object instantiated from that class). You can
+  run many containers from the same image.
+- **The daemon (`dockerd`)** — a background service that does all the real work: pulling images, building
+  layers, starting/stopping containers. The `docker` command you type is just a thin client that sends
+  requests to this daemon over a socket. If the daemon isn't running, every `docker` command fails
+  immediately with a connection error — `docker info` is how you check it's alive.
+
+**Why containers instead of a VM**: a virtual machine boots an entire separate operating system — heavy,
+minutes to start, gigabytes of overhead. A container shares the host machine's kernel and only isolates the
+process itself (its filesystem, its network, its environment) — that's why containers start in about a
+second and an image is tens/hundreds of MB instead of many GB.
+
+### 2. Dockerfile vs Docker Compose — two different jobs
+
+A **Dockerfile** builds *one* image. It's a recipe: start from this base, copy this file in, run this
+command. It has no idea whether a database exists anywhere.
+
+**docker-compose.yml** doesn't build anything by itself — it *orchestrates* multiple containers together as
+one system: which images to use (build some, pull others), how they're networked together, what order they
+start in, what ports/volumes/env vars each one gets. Plain Docker can build and run one container fine with
+no compose file at all (`docker build` + `docker run`). Compose exists specifically for the moment you need
+"my app" *and* "a database," wired together, started with one command, instead of several manual `docker
+run`s typed in the right order by hand.
+
+### 3. Dockerizing this app
+
+First, the **Dockerfile** (`payments/application/Dockerfile`):
+
+```dockerfile
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+COPY target/application-1.0.0-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-```properties
-# application-customerA.properties — only applied when "customerA" is active
-payments.default-currency=JOD
-```
+Line by line:
 
-```properties
-# application-customerB.properties — only applied when "customerB" is active
-payments.default-currency=EUR
-```
+- **`FROM eclipse-temurin:25-jre`** — every image is built starting *from* another image. This one already
+  has a Java 25 JRE installed (runtime only, no compiler — we're not compiling anything inside the image,
+  just running an already-built jar).
+- **`WORKDIR /app`** — sets the "current directory" inside the image for everything that follows. Same as
+  `mkdir -p /app && cd /app`. It matters twice: it's where the `COPY` below actually lands the file, *and*
+  it's the directory the container is sitting in when `ENTRYPOINT` runs — which is why `java -jar app.jar`
+  can find `app.jar` with no path in front of it.
+- **`COPY target/application-1.0.0-SNAPSHOT.jar app.jar`** — copies a file **from your machine** into the
+  image. This is the one line that pulls in actual content; everything else is instructions/metadata. The
+  source path is resolved relative to the *build context* (see below), not relative to the Dockerfile.
+- **`EXPOSE 8080`** — documentation, not enforcement. It does **not** publish the port to your host machine
+  on its own; that's what `ports:` in compose (or `-p` on `docker run`) does.
+- **`ENTRYPOINT ["java", "-jar", "app.jar"]`** — the command that runs the instant the container starts;
+  this process *is* the container (when it exits, the container stops). Written as a JSON array — `["java",
+  "-jar", "app.jar"]` — because that's *exec form*: Docker runs `java` directly as the container's main
+  process. If you wrote it as plain text (`ENTRYPOINT java -jar app.jar`, *shell form*), Docker would
+  actually run `/bin/sh -c "java -jar app.jar"` instead — an extra shell process wraps your real one, and
+  `docker stop`'s shutdown signal would hit that shell instead of reaching Java directly.
 
-Activate one at startup:
+**Critical gotcha**: this Dockerfile does **not** build your Java code — it only copies a jar that must
+already exist. The correct order, every time you change source code, is:
 
 ```bash
-java -jar app.jar --spring.profiles.active=customerA
-# or, during development:
-mvn spring-boot:run -Dspring-boot.run.profiles=customerA
+mvn package -DskipTests      # recompiles your code into a fresh jar in target/
+docker compose build         # rebuilds the image FROM that fresh jar
 ```
 
-With no profile passed at all, Spring Boot logs `No active profile set, falling back to 1 default
-profile: "default"` — only the base file applies, `payments.default-currency` stays `USD`. Reading
-the resolved value back out is the same `@Value` you've already seen:
+Skip the first step, and Docker will happily package your *old* code again — you'll fix a bug, rebuild the
+image, and watch the exact same bug happen again, because the jar never actually changed.
 
-```java
-@Service
-public class PaymentService {
-    @Value("${payments.default-currency}")
-    private String defaultCurrency;
-}
+Now the **docker-compose.yml** (repo root) that runs the app together with its database:
+
+```yaml
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - quickpay-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: payments/application
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres,liquibase
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: paymentsdb
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  quickpay-db-data:
 ```
 
-The property doesn't know or care which file it came from by the time `@Value` resolves it — that's
-the whole point: your code stays identical, only the active profile changes what gets injected.
+Worth being precise about a few of these:
 
-### 2. `@Profile` — swapping which bean gets registered
+- **`db` has no `build:`** — there's no Dockerfile for Postgres, we just pull the already-published
+  `postgres:16-alpine` image. `app` has no equivalent published image, so it needs `build:`.
+- **`environment:` under `db`** isn't arbitrary — those three variables are what *Postgres's own* startup
+  script reads to auto-create a database/user/password the first time it boots. Every published image
+  documents which env vars it understands.
+- **`volumes: - quickpay-db-data:/var/lib/postgresql/data`** — a container's own filesystem is thrown away
+  the moment the container is removed. That's fine for the stateless app, but fatal for a database. A
+  **volume** is storage Docker manages *outside* the container's disposable filesystem, mounted into it at
+  a fixed path. Postgres always writes its data to `/var/lib/postgresql/data` internally; this line
+  redirects that into the named volume instead, so the data survives `docker compose down` (though **not**
+  `down -v`, which deletes the volume too — that's the one command that actually wipes your data).
+- **`healthcheck` + `depends_on: condition: service_healthy`** — Postgres reports "running" long before it's
+  actually ready to accept connections. The healthcheck runs Postgres's own `pg_isready` tool repeatedly;
+  `depends_on` uses that result to hold `app` back until the database is genuinely ready, not just started.
+- **`build: context: payments/application`** — tells compose where to find the Dockerfile (it looks for a
+  file literally named `application/Dockerfile` inside that folder) and is also the root that every `COPY` path inside
+  that Dockerfile is resolved against — which is why `COPY target/application-1.0.0-SNAPSHOT.jar app.jar`
+  finds it at `payments/application/target/...`.
+- **`SPRING_PROFILES_ACTIVE`, `DB_HOST`, etc. under `app`** — same mechanism as Postgres's env vars, just
+  read by *our* Spring Boot app instead. `DB_HOST: db` is the interesting one: inside a compose network,
+  containers can reach each other by service name as a hostname — `db` really does resolve to the Postgres
+  container from `app`'s point of view.
 
-Properties files change *values*. `@Profile` changes something bigger: **which class Spring
-instantiates at all**. Put it on a `@Component`/`@Service`/`@Bean` and that bean is only ever created
-when a matching profile is active — non-matching ones aren't just unused, they're never constructed:
+Bring the whole thing up with:
 
-```java
-public interface NotificationSender {
-    void send(String message);
-}
-
-@Component
-@Profile("dev")
-public class ConsoleNotificationSender implements NotificationSender {
-    @Override
-    public void send(String message) {
-        System.out.println("[DEV] " + message);
-    }
-}
-
-@Component
-@Profile("prod")
-public class EmailNotificationSender implements NotificationSender {
-    @Override
-    public void send(String message) {
-        // real email/SMS integration lives here
-    }
-}
+```bash
+mvn package -DskipTests
+docker compose build
+docker compose up -d
 ```
 
-Anything that just injects `NotificationSender` (a constructor parameter, a `@RequiredArgsConstructor`
-field) never has to know which one it got — that's decided entirely by which profile started the app.
+### 4. Running just Postgres in Docker, app running locally from your IDE
 
-A few things worth being precise about:
+Sometimes you don't want the app itself in a container at all — you want to run/debug it directly from
+IntelliJ, but still don't want to install Postgres on your machine. Solution: a **second**, smaller compose
+file with only the database service, no `app` at all — `local/docker-compose.yml`:
 
-- **Combine profiles**: `@Profile({"dev", "test"})` is an OR (active if either is active).
-  `@Profile("!prod")` is a negation (active whenever `prod` is *not* active) — a common way to write
-  "everything except production" once, instead of listing every non-prod profile by name.
-- **The gotcha you will hit**: if *no* active profile matches any `@Profile` on a given interface's
-  implementations, **no bean gets created at all** — not a default, not a no-op, nothing. Injecting
-  `NotificationSender` then fails at startup with `NoSuchBeanDefinitionException`, not a runtime
-  surprise later. This is `@Profile`'s version of a compile error: it fails loud, at boot, which is
-  exactly what you want instead of silently running with nothing wired in.
-- **`@Profile("default")`** is special — it means "active only when *no* profile was explicitly set,"
-  i.e. exactly the fallback case above. That's a legitimate way to give an interface a genuine default
-  implementation for local/no-profile runs, while `dev`/`prod`/`customerA` etc. each override it.
+```yaml
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - quickpay-local-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-### 3. `@Primary` — a different problem: breaking a tie, not choosing by environment
-
-`@Profile` decides *whether* a bean exists for the current environment. `@Primary` solves a completely
-different problem: **more than one bean of the same type is already active at once**, and a plain
-injection point (no `@Qualifier`) needs Spring to pick one without throwing
-`NoUniqueBeanDefinitionException`.
-
-This comes up more than it sounds like it should — two profiles active together
-(`spring.profiles.active=dev,test`), or two implementations that were never profile-gated in the
-first place:
-
-```java
-public interface FeeCalculator {
-    BigDecimal calculate(BigDecimal amount);
-}
-
-@Component
-@Primary
-public class StandardFeeCalculator implements FeeCalculator { /* ... */ }
-
-@Component
-public class PromotionalFeeCalculator implements FeeCalculator { /* ... */ }
+volumes:
+  quickpay-local-db-data:
 ```
 
-Anywhere that just injects `FeeCalculator feeCalculator` gets `StandardFeeCalculator` — `@Primary`
-is the tie-breaker default. The one place that specifically needs the other one asks for it by name:
-
-```java
-public PaymentService(@Qualifier("promotionalFeeCalculator") FeeCalculator feeCalculator) { ... }
-```
-
-**When to actually reach for `@Primary` vs. `@Profile`**: if only one implementation should ever
-exist for a given environment, that's `@Profile` — there's no ambiguity to break, because only one
-candidate is ever in the context. Reach for `@Primary` when multiple implementations are
-*legitimately* active at the same time and you want a sensible default for most callers, with
-specific callers opting into the non-default one via `@Qualifier`. Using `@Primary` to paper over
-what should really be `@Profile` (e.g. marking the "prod" bean `@Primary` instead of profile-gating
-the others) just means all the other implementations are silently sitting in the context too,
-findable by anyone with a `@Qualifier` — not what you want for something like a fake vs. real payment
-gateway.
-
-### 4. Liquibase `context` — the same idea, for migrations
-
-Spring beans aren't the only thing that should differ per environment — schema changes can too: seed
-data that should only exist in dev, or a changeset that only makes sense before a customer-specific
-migration. Liquibase's `context` attribute on a `<changeSet>` is its own, independent version of
-exactly the same concept as `@Profile`:
-
-```xml
-<changeSet id="3" author="jane">
-    <createTable tableName="templates">
-        <!-- runs everywhere, no context specified -->
-    </createTable>
-</changeSet>
-
-<changeSet id="4" author="jane" context="dev">
-    <insert tableName="templates">
-        <column name="name" value="sample-template"/>
-    </insert>
-</changeSet>
-```
-
-A changeset with no `context` always runs. One with a `context` only runs when that context is
-active for the current execution — controlled by a property, most naturally tied straight to the
-active Spring profile:
+Start it with `cd local && docker compose up -d`. Then in IntelliJ, run the app with the active profiles
+set to `postgres,liquibase` — no environment variables needed at all, because `application-postgres.properties`
+already has `localhost`/`5432`/`postgres`/`postgres` as its defaults, and this compose file exposes Postgres
+on exactly that address:
 
 ```properties
-spring.liquibase.contexts=${spring.profiles.active}
+spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:paymentsdb}
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
 ```
 
-With that in place, starting the app under `dev` runs changeset 4 (seed data) as well as changeset 3;
-starting it under `prod` (or with no profile at all) skips changeset 4 entirely — same database
-migration history, no seed rows ever touching a real environment. Context expressions support the
-same combinators you just saw on `@Profile`: `context="dev or test"`, `context="!prod"`.
+The `${VAR:default}` syntax means "use env var `VAR` if it's set, otherwise fall back to `default`." Nothing
+sets `DB_HOST` when you run from IntelliJ, so it falls back to `localhost` — which is exactly where this
+compose file published Postgres's port.
 
-The parallel worth holding onto: `@Profile` decides which *beans* exist for this run; Liquibase
-`context` decides which *changesets* run for this run. Two different subsystems, the same underlying
-question — "what environment am I in right now" — answered once (the active profile) and threaded
-through both.
+**A real gotcha to know about, because it will happen to you**: if you run this compose file's `db` and it
+fails to start with "port already allocated," some *other* container is already using port 5432 (maybe the
+full app+db stack from step 3 is still running). Stop that one first (`docker compose down` in whichever
+directory started it) before starting this one.
+
+### 5. Sharing your dockerized app with a friend
+
+Once you have a working image, you can hand someone a fully working, already-built copy of your app —
+without them touching your source code, Maven, or JDK version at all.
+
+**On your machine:**
+```bash
+mvn package -DskipTests
+docker compose build
+docker save -o quickpay-app.tar quickpay-app:latest
+```
+`docker save` bundles the entire image — JRE, jar, everything — into one `.tar` file. Send that file however
+you'd send any file (USB, shared drive, network copy). No Docker Hub account, no login, no internet needed
+for this step.
+
+**On their machine:**
+```bash
+docker load -i quickpay-app.tar
+docker images   # confirms quickpay-app:latest is now there
+```
+Then either run it standalone against their own database:
+```bash
+docker run -d -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=postgres,liquibase \
+  -e DB_HOST=<their-db-host> \
+  quickpay-app:latest
+```
+or, if you also send them `docker-compose.yml`, have them change the `app` service's `build:` block to
+`image: quickpay-app:latest` (since the image is already loaded locally, there's nothing left to build) and
+just run `docker compose up`.
+
+**One naming trap to watch for**: Docker Compose names containers/networks/volumes after the *directory*
+your compose file lives in. If two different projects both happen to sit in a folder called the same thing
+(e.g. two clones both named `quickpay`), Compose treats them as the *same project* and silently reuses the
+same container names between them. This can make a stale, already-running container look like your new
+build "just worked" when it never actually ran your current code at all. If something behaves confusingly,
+the fix is always: `docker compose down` first (removes anything stale), then `docker compose up --build`
+(forces a real rebuild) — never trust a result you didn't get from a clean slate.
+
+## Command cheat-sheet
+
+You'll reach for these constantly; know what each one actually does, not just when to type it.
+
+| Command | What it does |
+|---|---|
+| `docker build -t <name> <path>` | Builds an image from a Dockerfile at `<path>` |
+| `docker images` | Lists images you have locally |
+| `docker rmi <image>` | Deletes an image |
+| `docker save -o file.tar <image>` / `docker load -i file.tar` | Export/import an image as a portable file |
+| `docker run <image>` | Creates and starts a container. `-d` detached, `-p host:container` publish a port, `-e KEY=value` set an env var |
+| `docker ps` / `docker ps -a` | Lists running containers / all containers including stopped ones — always your first check |
+| `docker stop <container>` / `docker rm <container>` | Gracefully stops / deletes a container |
+| `docker logs <container>` (add `-f` to follow) | Shows everything the container has printed — your main debugging tool |
+| `docker exec -it <container> bash` | Opens an interactive shell inside a running container |
+| `docker port <container>` | Shows which host ports are actually published for a container |
+| `docker info` | Confirms the daemon is running and reachable |
+| `docker compose up` (`-d`, `--build`) | Starts everything in the compose file; `--build` forces a rebuild first |
+| `docker compose down` (`-v`) | Stops and removes containers + network; `-v` also deletes volumes (wipes data) |
+| `docker compose build` | Builds/rebuilds images without starting anything |
+| `docker compose logs <service>` / `docker compose exec <service> <cmd>` | Same as `docker logs`/`docker exec`, by service name instead of container ID |
 
 ## Core exercises
 
-### Exercise 1 — Two implementations, one interface, gated by `@Profile`
+### Exercise 1 — Dockerize this app from nothing
 
-Create a small interface with two implementations (like `NotificationSender` above), gate them with
-`@Profile`, inject the interface somewhere it gets called, and run your app under each profile in
-turn. Prove — by observing actual behavior (a log line, a response), not by reading your own code —
-that a different implementation ran each time.
+Starting from a clean checkout with no image built yet: write (or copy) the Dockerfile, run `mvn package`,
+build the image, and run it standalone with `docker run` against a database you start separately. Confirm
+with `docker logs` that it actually started, and with a real API call that it works.
 
-### Exercise 2 — Hit the "no matching bean" error on purpose
+### Exercise 2 — Break the "stale jar" trap on purpose
 
-Start your app with a profile active that matches *neither* of your two `@Profile` values from
-Exercise 1 (e.g. `-Dspring-boot.run.profiles=staging`). Read the actual `NoSuchBeanDefinitionException`
-Spring gives you. Then fix it by adding an `@Profile("default")` implementation, and confirm running
-with *no* profile at all now uses it.
+Change one small thing in a validator's error message. Rebuild the Docker image *without* running `mvn
+package` first. Confirm — by hitting the running endpoint — that the old message is still there. Then run
+`mvn package` and rebuild for real, and confirm the new message shows up. You should be able to explain
+*why* skipping the Maven step changes nothing, in terms of what `COPY` actually does.
 
-### Exercise 3 — Hit the ambiguity error on purpose, then fix it with `@Primary`
+### Exercise 3 — Full stack with Compose
 
-Temporarily remove the `@Profile` annotations from Exercise 1's two beans so both are active
-simultaneously. Confirm you get `NoUniqueBeanDefinitionException` at startup. Fix it by adding
-`@Primary` to one of them. Then add a second, explicit injection point that uses
-`@Qualifier(...)` to deliberately get the *other* (non-primary) one, and confirm both injection
-points really did get different beans.
+Bring up `docker-compose.yml` (app + db together) from a clean slate (`docker compose down -v` first if
+anything's running), create a resource through the API, then confirm the row exists directly in Postgres
+with `docker compose exec db psql -U postgres -d paymentsdb -c "select ..."`.
 
-### Exercise 4 — A real setting, driven by profile
+### Exercise 4 — Postgres-only, app from your IDE
 
-Pick one real value in your project (a default currency, a fee, a limit). Move it into
-`application.properties` with a sensible default, then add two `application-<name>.properties` files
-overriding it differently. Run under each and confirm — via your running application, not by reading
-the file — that the value actually changed.
+Start only `local/docker-compose.yml`, then run the app from IntelliJ with the `postgres,liquibase`
+profiles active and no environment variables set. Confirm it connects using the properties file's
+defaults, not anything you configured by hand.
 
-### Exercise 5 — Liquibase context
+### Exercise 5 — Prove a volume survives, and prove `-v` destroys it
 
-Add a new changeset with a `context` attribute (seed data is a good candidate). Set
-`spring.liquibase.contexts=${spring.profiles.active}`. Run your app under a profile that matches the
-context and confirm (H2 console, or a `GET` that lists the seeded row) that it ran. Run it again under
-a different profile and confirm it didn't.
+Create a payment. `docker compose down` (no `-v`), then `docker compose up` again — confirm the payment is
+still there. Then `docker compose down -v` and bring it back up — confirm it's gone. Explain in your own
+words which of the two commands actually deleted data, and why.
+
+### Exercise 6 — Share your image
+
+`docker save` your built image to a `.tar`. Remove the local image entirely (`docker rmi`). `docker load`
+it back from the tar file with no rebuild at all, and run it — proving the tar really is a complete,
+self-contained copy of the app.
 
 ## Stretch exercises (if you finish early)
 
-- Write a context expression combining two contexts (`context="dev or test"`) and confirm it runs
-  under either.
-- Write a `@Profile("!prod")` bean and confirm it's active under `dev`, under no profile at all, and
-  inactive only under `prod`.
-- Activate two profiles at once (`-Dspring-boot.run.profiles=dev,test`) and check which
-  profile-specific properties file "wins" when both define the same key — read the Spring Boot docs
-  on activation order rather than guessing.
+- Give two different compose projects (e.g. two clones of this repo in differently-named folders) a
+  distinct project name with `docker compose -p <name> up`, and confirm their containers/volumes never
+  collide even if the folder names matched.
+- Read what `docker compose exec` actually does differently from `docker run` on the same image, and when
+  you'd reach for one over the other.
+- Look at `docker inspect <container>` and find where the environment variables you set actually ended up.
 
 ## Done checklist
 
-- [x] I can explain how a value in `application-<profile>.properties` overrides the same key in
-  `application.properties`, and only when that profile is active.
-- [x] I can explain what `@Profile` actually controls (whether a bean is created at all) versus what
-  a properties file controls (a value inside a bean that already exists).
-- [x] I hit `NoSuchBeanDefinitionException` from an unmatched profile on purpose, and can explain why
-  it happens instead of some default silently being used.
-- [x] I can explain what `@Profile("default")` specifically means, and when it does or doesn't apply.
-- [x] I hit `NoUniqueBeanDefinitionException` from two active, ungated beans on purpose, and fixed it
-  with `@Primary`.
-- [x] I can explain, in my own words, when a problem calls for `@Profile` versus when it calls for
-  `@Primary` — they solve different problems even though both involve "more than one bean".
-- [x] I can explain what `@Qualifier` does at an injection point, and why it can still reach a
-  non-`@Primary` bean.
-- [x] I can explain what a Liquibase `context` is, and that it's answering the same "which
-  environment" question as `@Profile` — just for changesets instead of beans.
-- [x] I wired `spring.liquibase.contexts` to my active Spring profile and proved a context-gated
-  changeset only runs when its context is active.
+- [ ] I can explain what an image is versus what a container is, in one sentence each.
+- [ ] I can explain what the Docker daemon actually is, and why every `docker` command needs it running.
+- [ ] I can explain, precisely, what a Dockerfile is for versus what docker-compose.yml is for.
+- [ ] I dockerized this app myself and ran it standalone with `docker run`.
+- [ ] I hit the "stale jar" trap on purpose and can explain exactly why `docker build` alone didn't pick up
+  my code change.
+- [ ] I can explain what a volume is and why a database needs one but the app itself doesn't.
+- [ ] I proved a volume survives `docker compose down` but not `docker compose down -v`.
+- [ ] I ran the app from my IDE against a Postgres that only exists in Docker, using nothing but the
+  properties file's own defaults.
+- [ ] I shared a built image with `docker save`/`docker load` and ran it with zero rebuild on the
+  receiving end.
+- [ ] I can name at least six `docker`/`docker compose` commands from memory and say what each does.
 
 ## Suggested resources
 
-- Spring Boot reference, "Profiles" — https://docs.spring.io/spring-boot/reference/features/profiles.html
-- Spring Framework reference, "Bean Definition Profiles" (`@Profile`) — https://docs.spring.io/spring-framework/reference/core/beans/environment.html
-- Baeldung, "Spring @Primary Annotation" — https://www.baeldung.com/spring-primary
-- Liquibase documentation, "Contexts" — https://docs.liquibase.com/concepts/changelogs/attributes/contexts.html
+- Docker docs, "What is a container?" — https://www.docker.com/resources/what-container/
+- Docker docs, Dockerfile reference — https://docs.docker.com/reference/dockerfile/
+- Docker Compose docs, Compose file reference — https://docs.docker.com/compose/compose-file/
+- Docker docs, "Volumes" — https://docs.docker.com/engine/storage/volumes/
+- Docker docs, `docker save` / `docker load` — https://docs.docker.com/reference/cli/docker/image/save/

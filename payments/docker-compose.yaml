@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - quickpay-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: application
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres,liquibase
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: paymentsdb
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      PAYMENTS_NOTES_DEFAULT-LENGTH: 2
+      PAYMENTS_CURRENCY_DEFAULT-CURRENCY: "JOD"
+      PAYMENTS_UPLOUD-BULK_SAVE: true
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  quickpay-db-data:

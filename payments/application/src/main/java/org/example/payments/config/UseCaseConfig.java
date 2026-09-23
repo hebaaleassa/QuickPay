@@ -19,12 +19,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 @Configuration
 public class UseCaseConfig {
@@ -38,11 +41,15 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public JsonTemplateRepository jsonTemplateRepository() throws IOException, URISyntaxException {
-        ClassPathResource classPathResource = new ClassPathResource("template/default-template.json");
-            URL url = classPathResource.getURL();
-            return new JsonTemplateRepository(Path.of(url.toURI()));
+    public JsonTemplateRepository jsonTemplateRepository() throws IOException {
+        Path file = Files.createTempFile("default-template", ".json");
 
+        try (InputStream resourceAsStream = getClass().getClassLoader()
+                .getResourceAsStream("template/default-template.json")) {
+
+            Files.copy(resourceAsStream, file, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return new JsonTemplateRepository(file);
     }
 
     @Bean
