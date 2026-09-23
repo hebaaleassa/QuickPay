@@ -2,15 +2,15 @@ package com.progressoft.quickpay.payments.controller;
 
 
 import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
-import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
-import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
-import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
+import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
 import com.progressoft.quickpay.payments.resources.BulkUploadRequest;
 import com.progressoft.quickpay.payments.resources.BulkUploadResultResponse;
 import com.progressoft.quickpay.payments.resources.PaymentRequest;
 import com.progressoft.quickpay.payments.resources.PaymentResponse;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
 import com.progressoft.quickpay.payments.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

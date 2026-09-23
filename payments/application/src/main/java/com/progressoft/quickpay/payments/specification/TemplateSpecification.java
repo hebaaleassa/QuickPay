@@ -14,6 +14,12 @@ public class TemplateSpecification implements Specification<TemplateEntity> {
         this.criteria = criteria;
     }
 
+    private static String escapeLike(String value) {
+        return value.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+    }
+
     @Override
     public Predicate toPredicate(Root<TemplateEntity> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
         String field = criteria.field();
@@ -23,8 +29,9 @@ public class TemplateSpecification implements Specification<TemplateEntity> {
             return builder.equal(root.get(field), value);
         }
         if (operation.equals("like")) {
+            String escapedvalue = escapeLike(value.toString().toLowerCase());
             return builder.like(builder.lower(root.get(field).as(String.class)),
-                    "%" + value.toString().toLowerCase() + "%");
+                    "%" + escapedvalue + "%", '\\');
         }
         throw new IllegalArgumentException("Unsupported operation: " + operation);
     }

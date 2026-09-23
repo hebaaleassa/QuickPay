@@ -1,13 +1,15 @@
 package com.progressoft.quickpay.payments.repository;
 
-import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
+import com.progressoft.quickpay.payments.domain.exception.InvalidPagingException;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
-import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
-import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
-import com.progressoft.quickpay.payments.domain.sorting.PaymentSortField;
 import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
+import com.progressoft.quickpay.payments.repository.jpa.PaymentRepositoryJpa;
+import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.resources.sorting.PaymentSortField;
 import com.progressoft.quickpay.payments.specification.PaymentSpecification;
 import com.progressoft.quickpay.payments.specification.SearchCriteria;
 import org.springframework.data.domain.Page;
@@ -20,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class PaymentRepositoryImpl implements PaymentRepository {
+public class PaymentRepositoryImpl implements PaymentRepository, PaymentSearchRepository {
     private final PaymentRepositoryJpa paymentRepositoryJpa;
     private final PaymentMapper paymentMapper;
 
@@ -55,7 +57,9 @@ public class PaymentRepositoryImpl implements PaymentRepository {
 
     @Override
     public PagingResult<Payment> findAll(PaymentFilter filter, PagingOptions pagingOptions, PaymentSortField sortField, String direction) {
-        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortField.fieldName());
+        Sort.Direction sortingDirection = Sort.Direction.fromOptionalString(direction)
+                .orElseThrow(() -> new InvalidPagingException("direction must be 'asc' or 'desc'"));
+        Sort sort = Sort.by(sortingDirection, sortField.fieldName()).and(Sort.by("id"));
         PageRequest pageRequest = PageRequest.of(pagingOptions.pageNumber(), pagingOptions.pageSize(), sort);
         Page<PaymentEntity> page = paymentRepositoryJpa.findAll(createFilter(filter), pageRequest);
 
@@ -66,7 +70,7 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         return Specification.allOf(
                 createSpecification("id", "=", filter.id()),
                 createSpecification("senderAccount", "like", filter.senderAccount()),
-                createSpecification("recieverAccount", "like", filter.recieverAccount()),
+                createSpecification("receiverAccount", "like", filter.receiverAccount()),
                 createSpecification("currency", "=", filter.currency()),
                 createSpecification("status", "=", filter.status()),
                 createSpecification("notes", "=", filter.notes()),

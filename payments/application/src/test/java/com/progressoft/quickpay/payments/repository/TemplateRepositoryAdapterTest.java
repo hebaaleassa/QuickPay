@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments.repository;
 import com.progressoft.quickpay.payments.TemplateTestData;
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
+import com.progressoft.quickpay.payments.repository.jpa.TemplateRepositoryJpa;
 import com.progressoft.training.fileparser.domain.Template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

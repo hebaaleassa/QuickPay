@@ -1,4 +1,4 @@
-package com.progressoft.quickpay.payments.repository;
+package com.progressoft.quickpay.payments.repository.jpa;
 
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

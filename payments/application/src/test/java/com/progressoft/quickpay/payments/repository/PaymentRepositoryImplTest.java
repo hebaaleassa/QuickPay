@@ -4,6 +4,7 @@ import com.progressoft.quickpay.payments.PaymentTestData;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
+import com.progressoft.quickpay.payments.repository.jpa.PaymentRepositoryJpa;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
