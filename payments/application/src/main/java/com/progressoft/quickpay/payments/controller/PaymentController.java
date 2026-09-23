@@ -2,7 +2,10 @@ package com.progressoft.quickpay.payments.controller;
 
 
 import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
+import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import com.progressoft.quickpay.payments.resources.BulkUploadRequest;
 import com.progressoft.quickpay.payments.resources.BulkUploadResultResponse;
@@ -58,15 +61,22 @@ public class PaymentController {
     }
 
     @GetMapping
-    public List<PaymentResponse> getAll() {
-        return service.findAll().stream().map(mapper::toResponse).toList();
+    public PagingResult<PaymentResponse> getAll(@ModelAttribute PaymentFilter filter,
+                                                @RequestParam(defaultValue = "0") int pageNumber,
+                                                @RequestParam(defaultValue = "2") int pageSize,
+                                                @RequestParam(defaultValue = "id") String sortBy,
+                                                @RequestParam(defaultValue = "asc") String direction) {
+
+        PagingOptions pagingOptions = new PagingOptions(pageNumber, pageSize);
+        PagingResult<Payment> result = service.findAll(filter, pagingOptions, sortBy, direction);
+        List<PaymentResponse> content = result.content().stream().map(mapper::toResponse).toList();
+        return new PagingResult<>(content, result.pageNumber(), result.pageSize(), result.totalElements(), result.totalPages());
     }
 
     @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BulkUploadResultResponse> uploadBulk(
-            @RequestPart("file") MultipartFile file,
-            @RequestPart(value = "metadata", required = false) String metadataJson)
-            throws IOException {
+    public ResponseEntity<BulkUploadResultResponse> uploadBulk(@RequestPart("file") MultipartFile file,
+                                                               @RequestPart(value = "metadata", required = false)
+                                                               String metadataJson) throws IOException {
         log.info("received request to upload bulk payments");
         String templateName = readTemplateName(metadataJson);
         Path tempFile = copyFile(file);

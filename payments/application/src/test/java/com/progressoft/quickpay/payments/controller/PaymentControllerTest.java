@@ -2,8 +2,11 @@ package com.progressoft.quickpay.payments.controller;
 
 
 import com.progressoft.quickpay.payments.PaymentTestData;
+import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.exception.GlobalExceptionHandler;
 import com.progressoft.quickpay.payments.mapper.PaymentMapperImpl;
 import com.progressoft.quickpay.payments.service.PaymentService;
@@ -56,12 +59,16 @@ class PaymentControllerTest {
 
     @Test
     void givenPaymentsExist_whenGetAll_thenReturn200() throws Exception {
-        Mockito.when(service.findAll())
-                .thenReturn(List.of(PaymentTestData.savedPayment(payment_id), PaymentTestData.savedPayment(payment_id + 1)));
+        Mockito.when(service.findAll(Mockito.any(PaymentFilter.class),
+                        Mockito.any(PagingOptions.class),
+                        Mockito.eq("id"),
+                        Mockito.eq("asc")))
+                .thenReturn(new PagingResult<>(List.of(PaymentTestData.savedPayment(payment_id),
+                        PaymentTestData.savedPayment(payment_id + 1)), 0, 10, 2, 1));
 
         mockMvc.perform(get("/api/payments"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(payment_id)).andExpect(jsonPath("$[1].id").value(payment_id + 1));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(payment_id)).andExpect(jsonPath("$.content[1].id").value(payment_id + 1));
     }
 
     @Test

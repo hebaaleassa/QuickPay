@@ -1,5 +1,8 @@
 package com.progressoft.quickpay.payments.controller;
 
+import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
 import com.progressoft.quickpay.payments.resources.template.TemplateRequest;
 import com.progressoft.quickpay.payments.resources.template.TemplateResponse;
@@ -35,8 +38,17 @@ public class TemplateController {
     }
 
     @GetMapping
-    public List<TemplateResponse> getAll() {
-        return service.findAll().stream().map(mapper::toResponse).toList();
+    public PagingResult<TemplateResponse> getAll(@RequestParam(required = false) Long id,
+                                                 @RequestParam(required = false) String name,
+                                                 @RequestParam(defaultValue = "0") int pageNumber,
+                                                 @RequestParam(defaultValue = "2") int pageSize,
+                                                 @RequestParam(defaultValue = "id") String sortBy,
+                                                 @RequestParam(defaultValue = "asc") String direction) {
+        TemplateFilter filter = new TemplateFilter(id, name);
+        PagingOptions pagingOptions = new PagingOptions(pageNumber, pageSize);
+        PagingResult<Template> result = service.findAll(filter, pagingOptions, sortBy, direction);
+        List<TemplateResponse> content = result.content().stream().map(mapper::toResponse).toList();
+        return new PagingResult<>(content, result.pageNumber(), result.pageSize(), result.totalElements(), result.totalPages());
     }
 
     @GetMapping("/{id}")

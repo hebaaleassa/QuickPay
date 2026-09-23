@@ -1,6 +1,12 @@
 package com.progressoft.quickpay.payments.service;
 
-import com.progressoft.quickpay.payments.repository.TemplateRepositoryImpl;
+import com.progressoft.quickpay.payments.domain.exception.InvalidSortFieldException;
+import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
+import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
+import com.progressoft.quickpay.payments.domain.paging.PagingResult;
+import com.progressoft.quickpay.payments.domain.sorting.TemplateSortField;
+import com.progressoft.quickpay.payments.repository.TemplateRepositoryAdapter;
+import com.progressoft.quickpay.payments.repository.TemplateSearchRepository;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
 import com.progressoft.training.fileparser.usecase.DeleteTemplateUseCase;
@@ -19,18 +25,20 @@ public class TemplateService {
     private final CreateTemplateUseCase createTemplateUseCase;
     private final GetTemplateUseCase getTemplateUseCase;
     private final DeleteTemplateUseCase deleteTemplateUseCase;
-    private final TemplateRepositoryImpl templateRepository;
+    private final TemplateRepositoryAdapter templateRepositoryAdapter;
     private final UpdateTemplateUseCase updateTemplateUseCase;
+    private final TemplateSearchRepository templateSearchRepository;
 
     public TemplateService(CreateTemplateUseCase createTemplateUseCase, GetTemplateUseCase getTemplateUseCase,
-                           DeleteTemplateUseCase deleteTemplateUseCase, TemplateRepositoryImpl templateRepository,
-                           UpdateTemplateUseCase updateTemplateUseCase) {
+                           DeleteTemplateUseCase deleteTemplateUseCase, TemplateRepositoryAdapter templateRepositoryAdapter,
+                           UpdateTemplateUseCase updateTemplateUseCase, TemplateSearchRepository templateSearchRepository) {
 
         this.createTemplateUseCase = createTemplateUseCase;
         this.getTemplateUseCase = getTemplateUseCase;
         this.deleteTemplateUseCase = deleteTemplateUseCase;
-        this.templateRepository = templateRepository;
+        this.templateRepositoryAdapter = templateRepositoryAdapter;
         this.updateTemplateUseCase = updateTemplateUseCase;
+        this.templateSearchRepository = templateSearchRepository;
     }
 
     public Template create(Template template) {
@@ -43,11 +51,11 @@ public class TemplateService {
     }
 
     public Optional<Template> findById(Long id) {
-        return templateRepository.findById(id);
+        return templateRepositoryAdapter.findById(id);
     }
 
     public List<Template> findAll() {
-        return templateRepository.findAll();
+        return templateRepositoryAdapter.findAll();
     }
 
     public void delete(String name) {
@@ -58,5 +66,17 @@ public class TemplateService {
     public Template update(Template template) {
         log.info("Updating template");
         return updateTemplateUseCase.execute(template);
+    }
+
+    public PagingResult<Template> findAll(TemplateFilter filter, PagingOptions pagingOptions,
+                                          String sortBy, String direction) {
+        log.info("finding templates");
+        TemplateSortField sortField;
+        try {
+            sortField = TemplateSortField.valueOf(sortBy.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidSortFieldException(sortBy);
+        }
+        return templateSearchRepository.findAll(filter, pagingOptions, sortField, direction);
     }
 }

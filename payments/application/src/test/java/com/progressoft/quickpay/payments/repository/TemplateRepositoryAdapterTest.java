@@ -11,17 +11,17 @@ import org.mockito.Mockito;
 
 import java.util.Optional;
 
-class TemplateRepositoryImplTest {
+class TemplateRepositoryAdapterTest {
 
     private TemplateRepositoryJpa repositoryJpa;
     private TemplateMapper mapper;
-    private TemplateRepositoryImpl repository;
+    private TemplateRepositoryAdapter repository;
 
     @BeforeEach
     void setUp() {
         repositoryJpa = Mockito.mock(TemplateRepositoryJpa.class);
         mapper = Mockito.mock(TemplateMapper.class);
-        repository = new TemplateRepositoryImpl(repositoryJpa, mapper);
+        repository = new TemplateRepositoryAdapter(repositoryJpa, mapper);
     }
 
     @Test
