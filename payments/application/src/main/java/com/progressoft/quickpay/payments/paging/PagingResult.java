@@ -1,4 +1,4 @@
-package com.progressoft.quickpay.payments.domain.paging;
+package com.progressoft.quickpay.payments.paging;
 
 import java.util.List;
 

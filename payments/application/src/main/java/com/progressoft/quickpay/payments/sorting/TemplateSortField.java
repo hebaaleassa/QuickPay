@@ -1,4 +1,4 @@
-package com.progressoft.quickpay.payments.domain.sorting;
+package com.progressoft.quickpay.payments.sorting;
 
 import java.util.Arrays;
 import java.util.Optional;

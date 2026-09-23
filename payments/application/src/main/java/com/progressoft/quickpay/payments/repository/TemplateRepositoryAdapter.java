@@ -1,11 +1,12 @@
 package com.progressoft.quickpay.payments.repository;
 
 import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
-import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
-import com.progressoft.quickpay.payments.domain.paging.PagingResult;
-import com.progressoft.quickpay.payments.domain.sorting.TemplateSortField;
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
+import com.progressoft.quickpay.payments.paging.PagingOptions;
+import com.progressoft.quickpay.payments.paging.PagingResult;
+import com.progressoft.quickpay.payments.repository.jpa.TemplateRepositoryJpa;
+import com.progressoft.quickpay.payments.sorting.TemplateSortField;
 import com.progressoft.quickpay.payments.specification.SearchCriteria;
 import com.progressoft.quickpay.payments.specification.TemplateSpecification;
 import com.progressoft.training.fileparser.domain.Template;
