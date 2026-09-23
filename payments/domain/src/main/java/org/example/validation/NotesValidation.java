@@ -22,7 +22,7 @@ public class NotesValidation implements Validator<Payment> {
         List<Violation> violations = new ArrayList<>();
         if (payment.getNotes() != null) {
             if (payment.getNotes().length() > maxLength) {
-                violations.add(new Violation("the length is longer than 500", "notes"));
+                violations.add(new Violation("the length is longer than " + maxLength, "notes"));
             }
         }
         return violations;
