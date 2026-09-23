@@ -1,4 +1,4 @@
-package com.progressoft.quickpay.payments.domain.filteration;
+package com.progressoft.quickpay.payments.repository.models;
 
 import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
 

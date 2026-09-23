@@ -1,9 +1,9 @@
 package com.progressoft.quickpay.payments.controller;
 
-import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
-import com.progressoft.quickpay.payments.paging.PagingOptions;
-import com.progressoft.quickpay.payments.paging.PagingResult;
+import com.progressoft.quickpay.payments.repository.models.TemplateFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
 import com.progressoft.quickpay.payments.resources.template.TemplateRequest;
 import com.progressoft.quickpay.payments.resources.template.TemplateResponse;
 import com.progressoft.quickpay.payments.service.TemplateService;

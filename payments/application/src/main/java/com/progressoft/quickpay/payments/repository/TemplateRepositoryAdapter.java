@@ -1,12 +1,13 @@
 package com.progressoft.quickpay.payments.repository;
 
-import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
+import com.progressoft.quickpay.payments.domain.exception.InvalidPagingException;
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
-import com.progressoft.quickpay.payments.paging.PagingOptions;
-import com.progressoft.quickpay.payments.paging.PagingResult;
 import com.progressoft.quickpay.payments.repository.jpa.TemplateRepositoryJpa;
-import com.progressoft.quickpay.payments.sorting.TemplateSortField;
+import com.progressoft.quickpay.payments.repository.models.TemplateFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.resources.sorting.TemplateSortField;
 import com.progressoft.quickpay.payments.specification.SearchCriteria;
 import com.progressoft.quickpay.payments.specification.TemplateSpecification;
 import com.progressoft.training.fileparser.domain.Template;
@@ -62,7 +63,9 @@ public class TemplateRepositoryAdapter implements TemplateRepositoryInterface, T
 
     @Override
     public PagingResult<Template> findAll(TemplateFilter filter, PagingOptions pagingOptions, TemplateSortField sortField, String direction) {
-        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortField.fieldName());
+        Sort.Direction sortingDirection = Sort.Direction.fromOptionalString(direction)
+                .orElseThrow(() -> new InvalidPagingException("direction must be 'asc' or 'desc"));
+        Sort sort = Sort.by(sortingDirection, sortField.fieldName()).and(Sort.by("id"));
         PageRequest pageRequest = PageRequest.of(pagingOptions.pageNumber(), pagingOptions.pageSize(), sort);
         Page<TemplateEntity> page = repository.findAll(createFilter(filter), pageRequest);
         return toPagingResult(page);

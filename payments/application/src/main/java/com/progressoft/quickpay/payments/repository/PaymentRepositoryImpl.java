@@ -1,15 +1,15 @@
 package com.progressoft.quickpay.payments.repository;
 
 import com.progressoft.quickpay.payments.domain.exception.InvalidPagingException;
-import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
-import com.progressoft.quickpay.payments.paging.PagingOptions;
-import com.progressoft.quickpay.payments.paging.PagingResult;
 import com.progressoft.quickpay.payments.repository.jpa.PaymentRepositoryJpa;
-import com.progressoft.quickpay.payments.sorting.PaymentSortField;
+import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.resources.sorting.PaymentSortField;
 import com.progressoft.quickpay.payments.specification.PaymentSpecification;
 import com.progressoft.quickpay.payments.specification.SearchCriteria;
 import org.springframework.data.domain.Page;

@@ -1,12 +1,12 @@
 package com.progressoft.quickpay.payments.service;
 
 import com.progressoft.quickpay.payments.domain.exception.InvalidSortFieldException;
-import com.progressoft.quickpay.payments.domain.filteration.TemplateFilter;
-import com.progressoft.quickpay.payments.paging.PagingOptions;
-import com.progressoft.quickpay.payments.paging.PagingResult;
 import com.progressoft.quickpay.payments.repository.TemplateRepositoryAdapter;
 import com.progressoft.quickpay.payments.repository.TemplateSearchRepository;
-import com.progressoft.quickpay.payments.sorting.TemplateSortField;
+import com.progressoft.quickpay.payments.repository.models.TemplateFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.resources.sorting.TemplateSortField;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
 import com.progressoft.training.fileparser.usecase.DeleteTemplateUseCase;
