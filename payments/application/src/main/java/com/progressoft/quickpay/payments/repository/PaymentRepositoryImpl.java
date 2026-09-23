@@ -5,6 +5,7 @@ import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
 import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
+import com.progressoft.quickpay.payments.domain.sorting.PaymentSortField;
 import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import com.progressoft.quickpay.payments.mapper.PaymentMapper;
 import com.progressoft.quickpay.payments.specification.PaymentSpecification;
@@ -53,27 +54,26 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
-    public List<Payment> findAll(String sortBy, String direction) {
-        Sort sorted = Sort.by(Sort.Direction.fromString(direction), sortBy);
-        return paymentRepositoryJpa.findAll(sorted).stream().map(paymentMapper::toDomain).toList();
+    public PagingResult<Payment> findAll(PaymentFilter filter, PagingOptions pagingOptions, PaymentSortField sortField, String direction) {
+        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortField.fieldName());
+        PageRequest pageRequest = PageRequest.of(pagingOptions.pageNumber(), pagingOptions.pageSize(), sort);
+        Page<PaymentEntity> page = paymentRepositoryJpa.findAll(createFilter(filter), pageRequest);
+
+        return toPagingResult(page);
     }
 
-    @Override
-    public PagingResult<Payment> findAll(PagingOptions pagingOptions) {
-        PageRequest pageRequest = PageRequest.of(pagingOptions.pageNumber(), pagingOptions.pageSize());
-        Page<PaymentEntity> page = paymentRepositoryJpa.findAll(pageRequest);
-        return new PagingResult<>(page.map(paymentMapper::toDomain).getContent(), page.getNumber(),
-                page.getSize(), page.getTotalElements(), page.getTotalPages());
-    }
-
-    @Override
-    public List<Payment> findAll(PaymentFilter filter) {
-        Specification<PaymentEntity> specification = Specification.allOf(
+    private Specification<PaymentEntity> createFilter(PaymentFilter filter) {
+        return Specification.allOf(
+                createSpecification("id", "=", filter.id()),
+                createSpecification("senderAccount", "=", filter.senderAccount()),
+                createSpecification("recieverAccount", "=", filter.recieverAccount()),
                 createSpecification("currency", "=", filter.currency()),
                 createSpecification("status", "=", filter.status()),
+                createSpecification("notes", "=", filter.notes()),
+                createSpecification("creditorName", "=", filter.creditorName()),
+                createSpecification("createdAt", "=", filter.createdAt()),
                 createSpecification("amount", ">=", filter.minAmount()),
                 createSpecification("amount", "<=", filter.maxAmount()));
-        return paymentRepositoryJpa.findAll(specification).stream().map(paymentMapper::toDomain).toList();
     }
 
     private Specification<PaymentEntity> createSpecification(String field, String operation, Object value) {
@@ -81,5 +81,10 @@ public class PaymentRepositoryImpl implements PaymentRepository {
             return Specification.unrestricted();
         }
         return new PaymentSpecification(new SearchCriteria(field, operation, value));
+    }
+
+    private PagingResult<Payment> toPagingResult(Page<PaymentEntity> page) {
+        return new PagingResult<>(page.map(paymentMapper::toDomain).getContent(), page.getNumber(),
+                page.getSize(), page.getTotalElements(), page.getTotalPages());
     }
 }

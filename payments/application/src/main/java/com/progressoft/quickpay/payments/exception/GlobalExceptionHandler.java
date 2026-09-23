@@ -1,5 +1,6 @@
 package com.progressoft.quickpay.payments.exception;
 
+import com.progressoft.quickpay.payments.domain.exception.InvalidSortFieldException;
 import com.progressoft.quickpay.payments.domain.exception.PaymentNotFoundException;
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
 import com.progressoft.training.fileparser.exception.FileParserException;
@@ -27,5 +28,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<String> handlePaymentNotFound(PaymentNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidSortFieldException.class)
+    public ResponseEntity<String> handleInvalidSortField(InvalidSortFieldException exception) {
+        return ResponseEntity.badRequest().body(exception.getMessage());
     }
 }

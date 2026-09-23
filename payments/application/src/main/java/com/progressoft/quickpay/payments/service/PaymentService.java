@@ -1,11 +1,13 @@
 package com.progressoft.quickpay.payments.service;
 
+import com.progressoft.quickpay.payments.domain.exception.InvalidSortFieldException;
 import com.progressoft.quickpay.payments.domain.filteration.PaymentFilter;
 import com.progressoft.quickpay.payments.domain.model.payment.BulkUploadResult;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.paging.PagingOptions;
 import com.progressoft.quickpay.payments.domain.paging.PagingResult;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
+import com.progressoft.quickpay.payments.domain.sorting.PaymentSortField;
 import com.progressoft.quickpay.payments.domain.usecases.CreatePaymentUseCase;
 import com.progressoft.quickpay.payments.domain.usecases.UploadBulkPaymentUseCase;
 import lombok.extern.slf4j.Slf4j;
@@ -46,16 +48,9 @@ public class PaymentService {
         return repository.findAll();
     }
 
-    public List<Payment> findAll(String sortBy, String direction) {
-        return repository.findAll(sortBy, direction);
-    }
-
-    public PagingResult<Payment> findAll(PagingOptions pagingOptions) {
-        return repository.findAll(pagingOptions);
-    }
-
-    public List<Payment> findAll(PaymentFilter filter) {
-        return repository.findAll(filter);
+    public PagingResult<Payment> findAll(PaymentFilter filter, PagingOptions pagingOptions, String sortBy, String direction) {
+        PaymentSortField sortField = PaymentSortField.from(sortBy).orElseThrow(() -> new InvalidSortFieldException(sortBy));
+        return repository.findAll(filter, pagingOptions, sortField, direction);
     }
 
     public Optional<Payment> findBy(Long id) {
