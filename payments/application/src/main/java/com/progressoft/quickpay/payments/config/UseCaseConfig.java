@@ -17,8 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.net.URL;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 @Configuration
 public class UseCaseConfig {
@@ -43,8 +45,11 @@ public class UseCaseConfig {
 
     @Bean
     public JsonTemplateRepository jsonTemplateRepository() throws Exception {
-        URL sourcefile = getClass().getClassLoader().getResource("templates/default-template.json");
-        return new JsonTemplateRepository(Path.of(sourcefile.toURI()));
+        Path file = Files.createTempFile("default-template", ".json");
+        try (InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("templates/default-template.json")) {
+            Files.copy(resourceAsStream, file, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return new JsonTemplateRepository(file);
     }
 
     @Bean
