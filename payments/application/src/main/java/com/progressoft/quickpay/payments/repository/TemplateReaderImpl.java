@@ -13,12 +13,12 @@ import java.util.Optional;
 public class TemplateReaderImpl implements TemplateReader {
 
     private final JsonTemplateRepository jsonTemplateRepository;
-    private final TemplateRepositoryImpl templateRepository;
+    private final TemplateRepositoryAdapter templateRepositoryAdapter;
 
-    public TemplateReaderImpl(JsonTemplateRepository jsonTemplateRepository, TemplateRepositoryImpl templateRepository) {
+    public TemplateReaderImpl(JsonTemplateRepository jsonTemplateRepository, TemplateRepositoryAdapter templateRepositoryAdapter) {
 
         this.jsonTemplateRepository = jsonTemplateRepository;
-        this.templateRepository = templateRepository;
+        this.templateRepositoryAdapter = templateRepositoryAdapter;
     }
 
     @Override
@@ -28,14 +28,14 @@ public class TemplateReaderImpl implements TemplateReader {
             return jsonTemplateRepository.findByName(name);
         }
 
-        return templateRepository.findByName(name);
+        return templateRepositoryAdapter.findByName(name);
     }
 
     @Override
     public List<Template> findAll() {
 
         List<Template> templates = new ArrayList<>(jsonTemplateRepository.findAll());
-        templates.addAll(templateRepository.findAll());
+        templates.addAll(templateRepositoryAdapter.findAll());
         return templates;
     }
 }

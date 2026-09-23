@@ -22,6 +22,9 @@ public class PaymentSpecification implements Specification<PaymentEntity> {
         if (operation.equals("=")) {
             return builder.equal(root.get(field), criteria.value());
         }
+        if (operation.equals("like")) {
+            return builder.like(root.get(field).as(String.class), "%" + criteria.value() + "%");
+        }
         Expression<BigDecimal> fieldValue = root.get(field);
         BigDecimal value = (BigDecimal) criteria.value();
         if (operation.equals(">=")) {

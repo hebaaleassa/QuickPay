@@ -49,6 +49,7 @@ public class PaymentService {
     }
 
     public PagingResult<Payment> findAll(PaymentFilter filter, PagingOptions pagingOptions, String sortBy, String direction) {
+        log.info("finding payments");
         PaymentSortField sortField = PaymentSortField.from(sortBy).orElseThrow(() -> new InvalidSortFieldException(sortBy));
         return repository.findAll(filter, pagingOptions, sortField, direction);
     }

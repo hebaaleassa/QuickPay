@@ -65,12 +65,12 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     private Specification<PaymentEntity> createFilter(PaymentFilter filter) {
         return Specification.allOf(
                 createSpecification("id", "=", filter.id()),
-                createSpecification("senderAccount", "=", filter.senderAccount()),
-                createSpecification("recieverAccount", "=", filter.recieverAccount()),
+                createSpecification("senderAccount", "like", filter.senderAccount()),
+                createSpecification("recieverAccount", "like", filter.recieverAccount()),
                 createSpecification("currency", "=", filter.currency()),
                 createSpecification("status", "=", filter.status()),
                 createSpecification("notes", "=", filter.notes()),
-                createSpecification("creditorName", "=", filter.creditorName()),
+                createSpecification("creditorName", "like", filter.creditorName()),
                 createSpecification("createdAt", "=", filter.createdAt()),
                 createSpecification("amount", ">=", filter.minAmount()),
                 createSpecification("amount", "<=", filter.maxAmount()));

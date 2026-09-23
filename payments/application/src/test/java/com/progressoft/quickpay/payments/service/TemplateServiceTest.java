@@ -1,7 +1,7 @@
 package com.progressoft.quickpay.payments.service;
 
 import com.progressoft.quickpay.payments.TemplateTestData;
-import com.progressoft.quickpay.payments.repository.TemplateRepositoryImpl;
+import com.progressoft.quickpay.payments.repository.TemplateRepositoryAdapter;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
 import com.progressoft.training.fileparser.usecase.GetTemplateUseCase;
@@ -26,7 +26,7 @@ class TemplateServiceTest {
     private GetTemplateUseCase getTemplateUseCase;
 
     @Mock
-    private TemplateRepositoryImpl templateRepository;
+    private TemplateRepositoryAdapter templateRepository;
 
     @InjectMocks
     private TemplateService service;
