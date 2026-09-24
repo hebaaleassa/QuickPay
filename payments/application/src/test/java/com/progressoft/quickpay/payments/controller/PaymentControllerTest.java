@@ -9,6 +9,7 @@ import com.progressoft.quickpay.payments.mapper.PaymentMapperImpl;
 import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
 import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
 import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.security.SecurityConfig;
 import com.progressoft.quickpay.payments.service.PaymentService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -16,19 +17,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PaymentController.class)
-@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class})
+@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class, SecurityConfig.class})
+@WithMockUser(roles = "PAYMENT")
 class PaymentControllerTest {
 
     private static final Long payment_id = PaymentTestData.PAYMENT_ID;
@@ -76,6 +78,14 @@ class PaymentControllerTest {
         Mockito.when(service.findBy(payment_id)).thenReturn(Optional.empty());
         mockMvc.perform(get("/api/payments/" + payment_id))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenValidBulkFile_whenUploadBulk_thenReturn200() throws Exception {
+        Mockito.when(service.uploadBulk(Mockito.eq("default"), Mockito.any())).thenReturn(null);
+        mockMvc.perform(multipart("/api/payments/bulk").file(PaymentTestData.bulkFile())
+                .file(PaymentTestData.metadataFile())).andExpect(status().isOk());
+        Mockito.verify(service).uploadBulk(Mockito.eq("default"), Mockito.any());
     }
 }
 
