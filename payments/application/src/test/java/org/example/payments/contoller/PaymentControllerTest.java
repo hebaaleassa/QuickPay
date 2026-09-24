@@ -1,22 +1,31 @@
 package org.example.payments.contoller;
 
+import org.example.model.BulkResult;
+import org.example.payments.config.SecurityConfig;
+import org.example.payments.exception.GlobalExceptionHandler;
+import org.example.payments.mapper.PaymentMapperImpl;
+import org.example.payments.resource.BulkUploadRequest;
+import org.example.payments.resource.BulkUploadResponse;
 import org.example.payments.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -28,6 +37,9 @@ import static org.mockito.ArgumentMatchers.any;
 import org.example.model.Payment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class, SecurityConfig.class})
+@WithMockUser(roles = "PAYMENT")
 @WebMvcTest(PaymentController.class)
 class PaymentControllerTest {
 
@@ -92,6 +104,24 @@ class PaymentControllerTest {
                         .content(jsonFile))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L));
+    }
+
+
+    @Test
+    void givenValidRequest_whenUploadBulk_thenReturnOk() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile("file","test.csv",
+                "test/csv","content".getBytes());
+
+        BulkResult result = new BulkResult(1, 1, 0, Map.of(), List.of());
+        BulkUploadResponse bulkUploadResponse = new BulkUploadResponse();
+
+        when(paymentService.uploadBulk(any(), any())).thenReturn(result);
+        when(paymentMapper.toResponse(result)).thenReturn(bulkUploadResponse);
+
+        mockMvc.perform(multipart("/api/payments/bulk").file(multipartFile)
+                .param("metadata", "new-template").with(csrf())).andExpect(status().isOk());
+
+
     }
 
 }
