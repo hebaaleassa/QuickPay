@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-create-template-structure" author="tolay">
+        <createSequence sequenceName="templates_sequence" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <changeSet id="006-create-templates-table" author="tolay">
+        <createTable tableName="templates">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255 ${char})">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+    <changeSet id="007-create-template-fields-table" author="tolay">
+        <createTable tableName="template_fields">
+            <column name="template_id" type="BIGINT"/>
+            <column name="field_order" type="INT"/>
+            <column name="name" type="VARCHAR(255 ${char})"/>
+            <column name="length" type="INT"/>
+            <column name="required" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="008-add-template-fields-foreign-key" author="tolay">
+        <addForeignKeyConstraint
+                baseTableName="template_fields"
+                baseColumnNames="template_id"
+                constraintName="fk_template_fields_template"
+                referencedTableName="templates"
+                referencedColumnNames="id"/>
+    </changeSet>
+</databaseChangeLog>
