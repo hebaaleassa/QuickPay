@@ -5,6 +5,11 @@ import com.progressoft.quickpay.payments.domain.exception.SystemViolationExcepti
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.domain.usecases.CreatePaymentUseCase;
+import com.progressoft.quickpay.payments.repository.PaymentSearchRepository;
+import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
+import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
+import com.progressoft.quickpay.payments.resources.paging.PagingResult;
+import com.progressoft.quickpay.payments.resources.sorting.PaymentSortField;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +28,8 @@ class PaymentServiceTest {
     private CreatePaymentUseCase createPaymentUseCase;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private PaymentSearchRepository searchRepository;
     @InjectMocks
     private PaymentService service;
 
@@ -63,5 +70,15 @@ class PaymentServiceTest {
                 PaymentTestData.savedPayment(payment_id + 1));
         Mockito.when(paymentRepository.findAll()).thenReturn(payments);
         Assertions.assertEquals(2, service.findAll().size());
+    }
+
+    @Test
+    void givenValidSort_whenFindAll_thenCallSearchRepository() {
+        PaymentFilter filter = new PaymentFilter(null, null, null, null,
+                null, null, null, null, null, null);
+        PagingOptions pagingOptions = new PagingOptions(0, 2);
+        PagingResult<Payment> result = new PagingResult<>(List.of(), 0, 2, 0, 0);
+        Mockito.when(searchRepository.findAll(filter, pagingOptions, PaymentSortField.ID, "asc")).thenReturn(result);
+        Assertions.assertSame(result, service.findAll(filter, pagingOptions, "id", "asc"));
     }
 }

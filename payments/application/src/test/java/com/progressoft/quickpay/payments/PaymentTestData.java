@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.model.payment.PaymentStatus;
 import com.progressoft.quickpay.payments.entity.PaymentEntity;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
 
@@ -30,17 +31,6 @@ public class PaymentTestData {
     public static Payment paymentWithNegativeAmount() {
         Payment payment = validPayment();
         payment.setAmount(new BigDecimal("-50"));
-        return payment;
-    }
-
-
-    public static Payment paymentWithEverythingWrong() {
-        Payment payment = new Payment();
-        payment.setSenderAccount("ACC-1");
-        payment.setReceiverAccount("ACC-1");
-        payment.setAmount(new BigDecimal("-5.555"));
-        payment.setCurrency("jod");
-        payment.setCreditorName("Tolay");
         return payment;
     }
 
@@ -74,4 +64,18 @@ public class PaymentTestData {
                 }""";
     }
 
+    public static MockMultipartFile bulkFile() {
+        return new MockMultipartFile("file", "payments.csv",
+                "text/csv", "test data".getBytes());
+    }
+
+    public static MockMultipartFile metadataFile() {
+        return new MockMultipartFile(
+                "metadata",
+                "",
+                "application/json", """
+                {
+                    "templateName": "default"
+                }""".getBytes());
+    }
 }

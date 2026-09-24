@@ -4,7 +4,9 @@ import com.progressoft.quickpay.payments.TemplateTestData;
 import com.progressoft.quickpay.payments.repository.TemplateRepositoryAdapter;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.CreateTemplateUseCase;
+import com.progressoft.training.fileparser.usecase.DeleteTemplateUseCase;
 import com.progressoft.training.fileparser.usecase.GetTemplateUseCase;
+import com.progressoft.training.fileparser.usecase.UpdateTemplateUseCase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,12 @@ class TemplateServiceTest {
 
     @Mock
     private TemplateRepositoryAdapter templateRepository;
+
+    @Mock
+    private DeleteTemplateUseCase deleteTemplateUseCase;
+
+    @Mock
+    private UpdateTemplateUseCase updateTemplateUseCase;
 
     @InjectMocks
     private TemplateService service;
@@ -51,5 +59,26 @@ class TemplateServiceTest {
         Template template = TemplateTestData.validTemplate();
         Mockito.when(templateRepository.findAll()).thenReturn(List.of(template));
         Assertions.assertEquals(1, service.findAll().size());
+    }
+
+    @Test
+    void givenTemplateExists_whenFindById_thenReturnTemplate() {
+        Template template = TemplateTestData.validTemplate();
+        Mockito.when(templateRepository.findById(TemplateTestData.template_id))
+                .thenReturn(Optional.of(template));
+        Assertions.assertTrue(service.findById(TemplateTestData.template_id).isPresent());
+    }
+
+    @Test
+    void givenTemplateName_whenDelete_thenUseCaseIsCalled() {
+        service.delete(TemplateTestData.templateName);
+        Mockito.verify(deleteTemplateUseCase).execute(TemplateTestData.templateName);
+    }
+
+    @Test
+    void givenTemplate_whenUpdate_thenUseCaseIsCalled() {
+        Template template = TemplateTestData.validTemplate();
+        Mockito.when(updateTemplateUseCase.execute(template)).thenReturn(template);
+        Assertions.assertSame(template, service.update(template));
     }
 }
