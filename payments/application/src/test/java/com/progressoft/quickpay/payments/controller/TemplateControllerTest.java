@@ -100,7 +100,8 @@ class TemplateControllerTest {
                 .thenReturn(new PagingResult<>(List.of(template), 0, 2, 1, 1));
         Mockito.when(mapper.toResponse(template)).thenReturn(TemplateTestData.response());
 
-        mockMvc.perform(get("/api/templates").param("name", "def").param("sortBy", "name").param("direction", "desc"))
+        mockMvc.perform(get("/api/templates").param("name", "def").param("sortBy", "name").param("direction", "desc")
+                        .param("pageNumber", "0").param("pageSize", "2"))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].name").value(TemplateTestData.templateName))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value(1));
