@@ -2,6 +2,9 @@ package org.example.payments.contoller;
 
 import com.progressoft.training.fileparser.domain.FieldDefinition;
 import com.progressoft.training.fileparser.domain.Template;
+import org.example.payments.config.SecurityConfig;
+import org.example.payments.exception.GlobalExceptionHandler;
+import org.example.payments.mapper.PaymentMapperImpl;
 import org.example.payments.mapper.TemplateMapper;
 import org.example.payments.resource.TemplateFieldResponse;
 import org.example.payments.resource.TemplateRequest;
@@ -11,7 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,6 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class, SecurityConfig.class})
+@WithMockUser(roles = "TEMPLATE")
 @WebMvcTest(TemplateController.class)
 class TemplateControllerTest {
 

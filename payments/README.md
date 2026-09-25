@@ -1,356 +1,250 @@
-# Day 9 — Docker & Docker Compose
+# Day 10 — Spring Security & Basic Auth
 
 ## Goal
 
-Get the app running the exact same way on any machine — yours, a teammate's, a server — without anyone
-having to manually install a JDK, Postgres, or match your exact OS. That means understanding what Docker
-actually is, what a Dockerfile does versus what Docker Compose does, how to package this specific app into
-an image, how to run just the database in Docker while the app itself runs locally from your IDE, and how
-to hand a fully working, already-built app to someone else with nothing more than one file.
+Stop anyone from calling every endpoint with no login at all. By the end of today you should be able to
+explain, in your own words, why an app needs security in the first place, know the difference between
+"who are you" and "are you allowed to do this," understand what Basic Auth actually sends over the wire,
+and be able to lock down a real Spring Boot app with usernames, passwords, and roles from nothing.
 
 ## Why it matters
 
-"Works on my machine" is the single most common source of wasted time in a team: a different Java version,
-a database nobody remembers how to install, a config value only you have set correctly. Docker doesn't
-fix your code — it freezes the *environment* your code runs in, so the environment stops being a variable.
-Once you can dockerize a service, you can also read and reason about how every real deployment (including
-the one your own team ships in production) actually works, since it's the same underlying idea — just with
-more tooling layered on top for scale.
+Right now, this app will let anyone create a payment, delete a template, read every record — no questions
+asked. That's fine for a training exercise; it would be a disaster for anything real. Every production
+service has to answer two questions before it does *anything* on a request: is this a real, recognized
+caller, and — separately — is this specific caller allowed to do this specific thing. Security isn't a
+feature you bolt on at the end; it's the layer that sits in front of everything else you've built and
+decides whether your controller code ever gets to run at all.
 
 ## Concept walkthrough
 
-### 1. What Docker actually is
+### 1. Authentication vs Authorization — the one distinction that matters most
 
-Docker packages an application together with everything it needs to run — the JRE, libraries, OS-level
-dependencies — into a single unit called an **image**. Running that image gives you a **container**: an
-isolated process that behaves identically regardless of which machine it's running on.
+These two words get used interchangeably by beginners, and they mean completely different things:
 
-A few pieces of vocabulary you need before anything else makes sense:
+- **Authentication** answers **"who are you?"** — verifying an identity. Did you prove you're really
+  Alice? This happens first.
+- **Authorization** answers **"are you allowed to do this?"** — checking permissions for an *already
+  verified* identity. Now that I know you're Alice, can Alice do *this specific thing*?
 
-- **Image** — a built, frozen template (like a class). Doesn't run by itself.
-- **Container** — a running instance of an image (like an object instantiated from that class). You can
-  run many containers from the same image.
-- **The daemon (`dockerd`)** — a background service that does all the real work: pulling images, building
-  layers, starting/stopping containers. The `docker` command you type is just a thin client that sends
-  requests to this daemon over a socket. If the daemon isn't running, every `docker` command fails
-  immediately with a connection error — `docker info` is how you check it's alive.
+The two failure responses map directly onto this distinction, and you should never mix them up:
 
-**Why containers instead of a VM**: a virtual machine boots an entire separate operating system — heavy,
-minutes to start, gigabytes of overhead. A container shares the host machine's kernel and only isolates the
-process itself (its filesystem, its network, its environment) — that's why containers start in about a
-second and an image is tens/hundreds of MB instead of many GB.
+- **`401 Unauthorized`** — actually means "I don't know who you are." No credentials, or the credentials
+  you sent don't match anyone real.
+- **`403 Forbidden`** — means "I know exactly who you are, and the answer is no." You authenticated fine;
+  you just don't have permission for this particular action.
 
-### 2. Dockerfile vs Docker Compose — two different jobs
+If you remember nothing else from today, remember this: **authentication happens once, authorization
+happens per-request, per-action.** A single logged-in user can be authorized for some things and denied for
+others.
 
-A **Dockerfile** builds *one* image. It's a recipe: start from this base, copy this file in, run this
-command. It has no idea whether a database exists anywhere.
+### 2. Why security has to exist at all
 
-**docker-compose.yml** doesn't build anything by itself — it *orchestrates* multiple containers together as
-one system: which images to use (build some, pull others), how they're networked together, what order they
-start in, what ports/volumes/env vars each one gets. Plain Docker can build and run one container fine with
-no compose file at all (`docker build` + `docker run`). Compose exists specifically for the moment you need
-"my app" *and* "a database," wired together, started with one command, instead of several manual `docker
-run`s typed in the right order by hand.
+Without it, an HTTP API is just a function anyone on the internet can call with any input. Two things
+security exists to prevent:
 
-### 3. Dockerizing this app
+- **Impersonation** — someone acting as if they were a different, legitimate user.
+- **Privilege escalation** — a legitimate, correctly-identified user doing something they were never meant
+  to do (a regular user deleting another user's data, for example).
 
-First, the **Dockerfile** (`payments/application/Dockerfile`):
+Authentication defends against the first. Authorization defends against the second. You need both — an app
+that only checks "are you logged in" but not "are you allowed to do *this*" will happily let any logged-in
+user do anything.
 
-```dockerfile
-FROM eclipse-temurin:25-jre
+### 3. What Basic Auth actually is
 
-WORKDIR /app
+There are many ways to authenticate (sessions with cookies, OAuth2/OIDC, JWTs). **Basic Auth is the
+simplest one that exists**: the caller attaches their username and password to *every single request*,
+inside an HTTP header, with no login page, no session, no token issued back.
 
-COPY target/application-1.0.0-SNAPSHOT.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+Authorization: Basic YWxpY2U6YWxpY2UxMjM=
 ```
 
-Line by line:
+That base64 blob is nothing but `username:password` encoded (not encrypted — base64 is trivially
+reversible, which is exactly why Basic Auth is only considered safe over HTTPS). This is what `curl -u
+alice:alice123` and Postman's "Basic Auth" tab are doing for you under the hood — attaching that header on
+your behalf.
 
-- **`FROM eclipse-temurin:25-jre`** — every image is built starting *from* another image. This one already
-  has a Java 25 JRE installed (runtime only, no compiler — we're not compiling anything inside the image,
-  just running an already-built jar).
-- **`WORKDIR /app`** — sets the "current directory" inside the image for everything that follows. Same as
-  `mkdir -p /app && cd /app`. It matters twice: it's where the `COPY` below actually lands the file, *and*
-  it's the directory the container is sitting in when `ENTRYPOINT` runs — which is why `java -jar app.jar`
-  can find `app.jar` with no path in front of it.
-- **`COPY target/application-1.0.0-SNAPSHOT.jar app.jar`** — copies a file **from your machine** into the
-  image. This is the one line that pulls in actual content; everything else is instructions/metadata. The
-  source path is resolved relative to the *build context* (see below), not relative to the Dockerfile.
-- **`EXPOSE 8080`** — documentation, not enforcement. It does **not** publish the port to your host machine
-  on its own; that's what `ports:` in compose (or `-p` on `docker run`) does.
-- **`ENTRYPOINT ["java", "-jar", "app.jar"]`** — the command that runs the instant the container starts;
-  this process *is* the container (when it exits, the container stops). Written as a JSON array — `["java",
-  "-jar", "app.jar"]` — because that's *exec form*: Docker runs `java` directly as the container's main
-  process. If you wrote it as plain text (`ENTRYPOINT java -jar app.jar`, *shell form*), Docker would
-  actually run `/bin/sh -c "java -jar app.jar"` instead — an extra shell process wraps your real one, and
-  `docker stop`'s shutdown signal would hit that shell instead of reaching Java directly.
+**Why it's the right starting point for this lesson, and the wrong choice for a lot of real production
+systems**: it's dead simple to understand and to test with curl/Postman, which is exactly why we're using it
+today. But it means sending your actual password on every request forever, with no way to "log out" short of
+changing the password. Real systems built for browsers or long-lived sessions usually use something session-
+or token-based instead — but every one of those still boils down to the same two questions: who are you,
+and what are you allowed to do.
 
-**Critical gotcha**: this Dockerfile does **not** build your Java code — it only copies a jar that must
-already exist. The correct order, every time you change source code, is:
+### 4. Securing this app, step by step
+
+**Step 1 — add the dependency.** The moment `spring-boot-starter-security` is on the classpath, Spring Boot
+auto-configures a default security setup that locks down *every* endpoint. Nothing works until you define
+your own rules — this is deliberate; a new dependency should never silently leave things open.
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+**Step 2 — define who your users are.** For this exercise, a fake in-memory list is enough — no database
+involved:
+
+```java
+@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+}
+
+@Bean
+public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+    return new InMemoryUserDetailsManager(
+            User.withUsername("alice")
+                    .password(passwordEncoder.encode("alice123"))
+                    .roles("PAYMENT")
+                    .build(),
+            User.withUsername("admin")
+                    .password(passwordEncoder.encode("admin123"))
+                    .roles("TEMPLATE")
+                    .build()
+    );
+}
+```
+
+Two things worth being precise about:
+
+- **Never store plain-text passwords, even in a demo.** `BCryptPasswordEncoder` hashes the password
+  (a one-way scramble you can't reverse) before it's stored — Spring Security compares hashes, never plain
+  text.
+- **The single most common mistake here**: calling `.password("alice123")` directly, without
+  `passwordEncoder.encode(...)`. Spring Security still uses your registered `PasswordEncoder` to *check*
+  logins against whatever's stored — so if the stored value isn't actually a valid hash in that encoder's
+  format, every single login attempt fails, with no error telling you why. If you ever see "I set the exact
+  right password and I still get 401," check this first.
+
+**Step 3 — define the rules.** This is where authorization actually gets configured — which role can do
+what:
+
+```java
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/payments/**").hasAnyRole("PAYMENT", "TEMPLATE")
+                    .requestMatchers("/api/templates/**").hasRole("TEMPLATE")
+                    .anyRequest().authenticated())
+            .httpBasic(Customizer.withDefaults());
+    return http.build();
+}
+```
+
+Read this top to bottom, like a list of checkpoints:
+- Anything under `/api/payments/` needs the `PAYMENT` role *or* the `TEMPLATE` role.
+- Anything under `/api/templates/` needs the `TEMPLATE` role specifically — `PAYMENT` alone isn't enough.
+- Anything else at all just needs *some* logged-in user (the safety net for anything not explicitly listed).
+
+`.httpBasic(Customizer.withDefaults())` is the line that actually turns on Basic Auth as the mechanism used
+to answer "who are you" for all of the above.
+
+**Why `.csrf(...).disable()` is here**: CSRF protection defends against a browser being tricked by a
+different website into submitting a request using your *automatically-attached session cookie*. We have no
+sessions or cookies at all — every request carries its own credentials on purpose, every time — so there's
+nothing for CSRF to protect, and leaving it on would just block your own legitimate requests from curl and
+Postman.
+
+**Step 4 — actually test it, both ways it can fail.**
 
 ```bash
-mvn package -DskipTests      # recompiles your code into a fresh jar in target/
-docker compose build         # rebuilds the image FROM that fresh jar
+# no credentials at all -> 401 (authentication failure)
+curl -i http://localhost:8080/api/payments
+
+# alice, wrong password -> 401 (authentication failure)
+curl -i -u alice:wrongpassword http://localhost:8080/api/payments
+
+# alice, correct password, reading payments -> 200 (she has PAYMENT)
+curl -i -u alice:alice123 http://localhost:8080/api/payments
+
+# alice, correct password, reading templates -> 403 (authorization failure - wrong role)
+curl -i -u alice:alice123 http://localhost:8080/api/templates
+
+# admin, correct password, reading templates -> 200 (he has TEMPLATE)
+curl -i -u admin:admin123 http://localhost:8080/api/templates
 ```
 
-Skip the first step, and Docker will happily package your *old* code again — you'll fix a bug, rebuild the
-image, and watch the exact same bug happen again, because the jar never actually changed.
+If you only ever test the "it works" case, you haven't actually proven your rules do anything — the 401 and
+403 cases are the ones that prove the security is real.
 
-Now the **docker-compose.yml** (repo root) that runs the app together with its database:
+### 5. A gotcha specific to testing this with `@WebMvcTest`
 
-```yaml
-services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: paymentsdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - quickpay-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+`@WebMvcTest` only loads the one controller you're testing — it deliberately does **not** automatically pick
+up your other `@Configuration` classes, including your security config. Skip this and your tests fall back
+to Spring Boot's own generic default security setup instead of yours, which produces confusing `403`s from a
+CSRF check that has nothing to do with your actual role rules. Fix: explicitly import it.
 
-  app:
-    build:
-      context: payments/application
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: postgres,liquibase
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: paymentsdb
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  quickpay-db-data:
+```java
+@WebMvcTest(PaymentController.class)
+@Import({GlobalExceptionHandler.class, PaymentMapperImpl.class, SecurityConfig.class})
+@WithMockUser(roles = "PAYMENT")
+class PaymentControllerTest { ... }
 ```
 
-Worth being precise about a few of these:
-
-- **`db` has no `build:`** — there's no Dockerfile for Postgres, we just pull the already-published
-  `postgres:16-alpine` image. `app` has no equivalent published image, so it needs `build:`.
-- **`environment:` under `db`** isn't arbitrary — those three variables are what *Postgres's own* startup
-  script reads to auto-create a database/user/password the first time it boots. Every published image
-  documents which env vars it understands.
-- **`volumes: - quickpay-db-data:/var/lib/postgresql/data`** — a container's own filesystem is thrown away
-  the moment the container is removed. That's fine for the stateless app, but fatal for a database. A
-  **volume** is storage Docker manages *outside* the container's disposable filesystem, mounted into it at
-  a fixed path. Postgres always writes its data to `/var/lib/postgresql/data` internally; this line
-  redirects that into the named volume instead, so the data survives `docker compose down` (though **not**
-  `down -v`, which deletes the volume too — that's the one command that actually wipes your data).
-- **`healthcheck` + `depends_on: condition: service_healthy`** — Postgres reports "running" long before it's
-  actually ready to accept connections. The healthcheck runs Postgres's own `pg_isready` tool repeatedly;
-  `depends_on` uses that result to hold `app` back until the database is genuinely ready, not just started.
-- **`build: context: payments/application`** — tells compose where to find the Dockerfile (it looks for a
-  file literally named `application/Dockerfile` inside that folder) and is also the root that every `COPY` path inside
-  that Dockerfile is resolved against — which is why `COPY target/application-1.0.0-SNAPSHOT.jar app.jar`
-  finds it at `payments/application/target/...`.
-- **`SPRING_PROFILES_ACTIVE`, `DB_HOST`, etc. under `app`** — same mechanism as Postgres's env vars, just
-  read by *our* Spring Boot app instead. `DB_HOST: db` is the interesting one: inside a compose network,
-  containers can reach each other by service name as a hostname — `db` really does resolve to the Postgres
-  container from `app`'s point of view.
-
-Bring the whole thing up with:
-
-```bash
-mvn package -DskipTests
-docker compose build
-docker compose up -d
-```
-
-### 4. Running just Postgres in Docker, app running locally from your IDE
-
-Sometimes you don't want the app itself in a container at all — you want to run/debug it directly from
-IntelliJ, but still don't want to install Postgres on your machine. Solution: a **second**, smaller compose
-file with only the database service, no `app` at all — `local/docker-compose.yml`:
-
-```yaml
-services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: paymentsdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - quickpay-local-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-volumes:
-  quickpay-local-db-data:
-```
-
-Start it with `cd local && docker compose up -d`. Then in IntelliJ, run the app with the active profiles
-set to `postgres,liquibase` — no environment variables needed at all, because `application-postgres.properties`
-already has `localhost`/`5432`/`postgres`/`postgres` as its defaults, and this compose file exposes Postgres
-on exactly that address:
-
-```properties
-spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:paymentsdb}
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.username=${DB_USERNAME:postgres}
-spring.datasource.password=${DB_PASSWORD:postgres}
-```
-
-The `${VAR:default}` syntax means "use env var `VAR` if it's set, otherwise fall back to `default`." Nothing
-sets `DB_HOST` when you run from IntelliJ, so it falls back to `localhost` — which is exactly where this
-compose file published Postgres's port.
-
-**A real gotcha to know about, because it will happen to you**: if you run this compose file's `db` and it
-fails to start with "port already allocated," some *other* container is already using port 5432 (maybe the
-full app+db stack from step 3 is still running). Stop that one first (`docker compose down` in whichever
-directory started it) before starting this one.
-
-### 5. Sharing your dockerized app with a friend
-
-Once you have a working image, you can hand someone a fully working, already-built copy of your app —
-without them touching your source code, Maven, or JDK version at all.
-
-**On your machine:**
-```bash
-mvn package -DskipTests
-docker compose build
-docker save -o quickpay-app.tar quickpay-app:latest
-```
-`docker save` bundles the entire image — JRE, jar, everything — into one `.tar` file. Send that file however
-you'd send any file (USB, shared drive, network copy). No Docker Hub account, no login, no internet needed
-for this step.
-
-**On their machine:**
-```bash
-docker load -i quickpay-app.tar
-docker images   # confirms quickpay-app:latest is now there
-```
-Then either run it standalone against their own database:
-```bash
-docker run -d -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=postgres,liquibase \
-  -e DB_HOST=<their-db-host> \
-  quickpay-app:latest
-```
-or, if you also send them `docker-compose.yml`, have them change the `app` service's `build:` block to
-`image: quickpay-app:latest` (since the image is already loaded locally, there's nothing left to build) and
-just run `docker compose up`.
-
-**One naming trap to watch for**: Docker Compose names containers/networks/volumes after the *directory*
-your compose file lives in. If two different projects both happen to sit in a folder called the same thing
-(e.g. two clones both named `quickpay`), Compose treats them as the *same project* and silently reuses the
-same container names between them. This can make a stale, already-running container look like your new
-build "just worked" when it never actually ran your current code at all. If something behaves confusingly,
-the fix is always: `docker compose down` first (removes anything stale), then `docker compose up --build`
-(forces a real rebuild) — never trust a result you didn't get from a clean slate.
-
-## Command cheat-sheet
-
-You'll reach for these constantly; know what each one actually does, not just when to type it.
-
-| Command | What it does |
-|---|---|
-| `docker build -t <name> <path>` | Builds an image from a Dockerfile at `<path>` |
-| `docker images` | Lists images you have locally |
-| `docker rmi <image>` | Deletes an image |
-| `docker save -o file.tar <image>` / `docker load -i file.tar` | Export/import an image as a portable file |
-| `docker run <image>` | Creates and starts a container. `-d` detached, `-p host:container` publish a port, `-e KEY=value` set an env var |
-| `docker ps` / `docker ps -a` | Lists running containers / all containers including stopped ones — always your first check |
-| `docker stop <container>` / `docker rm <container>` | Gracefully stops / deletes a container |
-| `docker logs <container>` (add `-f` to follow) | Shows everything the container has printed — your main debugging tool |
-| `docker exec -it <container> bash` | Opens an interactive shell inside a running container |
-| `docker port <container>` | Shows which host ports are actually published for a container |
-| `docker info` | Confirms the daemon is running and reachable |
-| `docker compose up` (`-d`, `--build`) | Starts everything in the compose file; `--build` forces a rebuild first |
-| `docker compose down` (`-v`) | Stops and removes containers + network; `-v` also deletes volumes (wipes data) |
-| `docker compose build` | Builds/rebuilds images without starting anything |
-| `docker compose logs <service>` / `docker compose exec <service> <cmd>` | Same as `docker logs`/`docker exec`, by service name instead of container ID |
+`@WithMockUser` is the test-only equivalent of "pretend I'm logged in as this role" — there's no real HTTP
+request with a password to send in a unit test, so this fakes the authenticated identity directly.
 
 ## Core exercises
 
-### Exercise 1 — Dockerize this app from nothing
+### Exercise 1 — Secure the app from nothing
 
-Starting from a clean checkout with no image built yet: write (or copy) the Dockerfile, run `mvn package`,
-build the image, and run it standalone with `docker run` against a database you start separately. Confirm
-with `docker logs` that it actually started, and with a real API call that it works.
+Add the dependency, write the config from scratch (don't copy-paste — type it out), and prove it's actually
+locked down: confirm every endpoint returns `401` with zero changes beyond adding the dependency and one
+`anyRequest().authenticated()` rule.
 
-### Exercise 2 — Break the "stale jar" trap on purpose
+### Exercise 2 — Hit both failure modes on purpose, and tell them apart
 
-Change one small thing in a validator's error message. Rebuild the Docker image *without* running `mvn
-package` first. Confirm — by hitting the running endpoint — that the old message is still there. Then run
-`mvn package` and rebuild for real, and confirm the new message shows up. You should be able to explain
-*why* skipping the Maven step changes nothing, in terms of what `COPY` actually does.
+Call a protected endpoint with no credentials (expect `401`), then with valid credentials but the wrong role
+for that action (expect `403`). Explain, in your own words, why these are different failures and why an app
+should never return the same status code for both.
 
-### Exercise 3 — Full stack with Compose
+### Exercise 3 — Reproduce the "forgot to encode" bug on purpose
 
-Bring up `docker-compose.yml` (app + db together) from a clean slate (`docker compose down -v` first if
-anything's running), create a resource through the API, then confirm the row exists directly in Postgres
-with `docker compose exec db psql -U postgres -d paymentsdb -c "select ..."`.
+Set a user's password with `.password("mypassword")` directly, skipping `passwordEncoder.encode(...)`.
+Confirm that logging in with the *exact correct* password still fails. Then fix it, and confirm it works.
+Explain what was actually being compared to what, and why it always failed silently rather than throwing an
+obvious error.
 
-### Exercise 4 — Postgres-only, app from your IDE
+### Exercise 4 — Design two roles for a resource you own
 
-Start only `local/docker-compose.yml`, then run the app from IntelliJ with the `postgres,liquibase`
-profiles active and no environment variables set. Confirm it connects using the properties file's
-defaults, not anything you configured by hand.
+Pick two actions in this app (e.g. "read templates" vs "delete templates") and design two roles where one
+user can do only one of them and another user can do both — matching the same pattern as `PAYMENT`/
+`TEMPLATE` above. Write the rule, create the two users, and prove the boundary with real requests.
 
-### Exercise 5 — Prove a volume survives, and prove `-v` destroys it
+### Exercise 5 — Fix the `@WebMvcTest` trap
 
-Create a payment. `docker compose down` (no `-v`), then `docker compose up` again — confirm the payment is
-still there. Then `docker compose down -v` and bring it back up — confirm it's gone. Explain in your own
-words which of the two commands actually deleted data, and why.
-
-### Exercise 6 — Share your image
-
-`docker save` your built image to a `.tar`. Remove the local image entirely (`docker rmi`). `docker load`
-it back from the tar file with no rebuild at all, and run it — proving the tar really is a complete,
-self-contained copy of the app.
-
-## Stretch exercises (if you finish early)
-
-- Give two different compose projects (e.g. two clones of this repo in differently-named folders) a
-  distinct project name with `docker compose -p <name> up`, and confirm their containers/volumes never
-  collide even if the folder names matched.
-- Read what `docker compose exec` actually does differently from `docker run` on the same image, and when
-  you'd reach for one over the other.
-- Look at `docker inspect <container>` and find where the environment variables you set actually ended up.
+Take an existing `@WebMvcTest` for a controller with no security-aware tests yet. Add security to the app,
+watch the existing tests break with a `403` that has nothing to do with your actual rules, diagnose why
+(hint: what config is and isn't loaded by `@WebMvcTest`), and fix it with `@Import` + `@WithMockUser`.
 
 ## Done checklist
 
-- [ ] I can explain what an image is versus what a container is, in one sentence each.
-- [ ] I can explain what the Docker daemon actually is, and why every `docker` command needs it running.
-- [ ] I can explain, precisely, what a Dockerfile is for versus what docker-compose.yml is for.
-- [ ] I dockerized this app myself and ran it standalone with `docker run`.
-- [ ] I hit the "stale jar" trap on purpose and can explain exactly why `docker build` alone didn't pick up
-  my code change.
-- [ ] I can explain what a volume is and why a database needs one but the app itself doesn't.
-- [ ] I proved a volume survives `docker compose down` but not `docker compose down -v`.
-- [ ] I ran the app from my IDE against a Postgres that only exists in Docker, using nothing but the
-  properties file's own defaults.
-- [ ] I shared a built image with `docker save`/`docker load` and ran it with zero rebuild on the
-  receiving end.
-- [ ] I can name at least six `docker`/`docker compose` commands from memory and say what each does.
+- [x] I can explain the difference between authentication and authorization in one sentence each, without
+  using the word "auth" to define either one.
+- [x] I know which HTTP status code means "I don't know who you are" and which means "I know who you are
+  and the answer is no," and why they must never be the same code.
+- [x] I can explain what Basic Auth actually sends on the wire, and why it's base64 (encoded) rather than
+  encrypted.
+- [x] I secured this app from an empty `SecurityConfig`, with in-memory users, two roles, and real rules.
+- [x] I hit `401` and `403` on purpose, and can explain exactly why each one happened.
+- [x] I reproduced the "forgot to call `passwordEncoder.encode(...)`" bug on purpose, and can explain why it
+  fails silently instead of throwing an obvious error.
+- [x] I fixed a `@WebMvcTest` that broke when security was added, and can explain why `@WebMvcTest` didn't
+  pick up my security config automatically.
+- [x] I can explain, in my own words, why `.csrf().disable()` is correct for this specific API and would
+  not be correct for a browser-based, cookie-session app.
 
 ## Suggested resources
 
-- Docker docs, "What is a container?" — https://www.docker.com/resources/what-container/
-- Docker docs, Dockerfile reference — https://docs.docker.com/reference/dockerfile/
-- Docker Compose docs, Compose file reference — https://docs.docker.com/compose/compose-file/
-- Docker docs, "Volumes" — https://docs.docker.com/engine/storage/volumes/
-- Docker docs, `docker save` / `docker load` — https://docs.docker.com/reference/cli/docker/image/save/
+- Spring Security reference, "Authentication" — https://docs.spring.io/spring-security/reference/servlet/authentication/index.html
+- Spring Security reference, "Authorization" — https://docs.spring.io/spring-security/reference/servlet/authorization/index.html
+- Spring Security reference, "Basic Authentication" — https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/basic.html
+- Spring Security reference, "Testing" (`@WithMockUser`) — https://docs.spring.io/spring-security/reference/servlet/test/method.html
+- OWASP, "Authentication vs. Authorization" — https://owasp.org/www-community/Broken_Authentication

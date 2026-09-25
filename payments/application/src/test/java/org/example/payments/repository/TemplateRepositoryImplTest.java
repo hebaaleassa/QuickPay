@@ -5,14 +5,13 @@ import com.progressoft.training.fileparser.domain.Template;
 import org.example.payments.mapper.TemplateMapper;
 
 import org.example.payments.model.TemplateEntity;
-import org.example.payments.model.TemplateField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.util.ArrayList;
+
 import java.util.List;
 
 import java.util.Optional;
@@ -92,5 +91,13 @@ class TemplateRepositoryImplTest {
         verify(jpaRepository).delete(entity);
     }
 
+    @Test
+    public void givenValidInput_whenFindBy_thenAllTemplate() {
+        TemplateEntity  entity = new TemplateEntity();
+        when(jpaRepository.findAll()).thenReturn(List.of(entity));
+        when(mapper.toDomain(entity)).thenReturn(template);
 
+        List<Template> all = repository.findAll();
+        assertEquals(List.of(template), all);
+    }
 }

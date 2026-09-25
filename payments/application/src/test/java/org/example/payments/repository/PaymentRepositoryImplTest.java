@@ -97,7 +97,15 @@ class PaymentRepositoryImplTest {
 
     }
 
+    @Test
+    public  void givenListOfPayments_whenSaveAll_thenSaveAndReturnAll() {
+        when(mapper.toEntity(paymentDomain)).thenReturn(Optional.of(paymentEntity).get());
+        when(repository.saveAll(List.of(paymentEntity))).thenReturn(List.of(paymentEntity));
+        when(mapper.toDomain(paymentEntity)).thenReturn(Optional.of(paymentDomain).get());
 
+        List<Payment> result = paymentRepositoryImpl.saveAll(List.of(paymentDomain));
 
-
+        assertNotNull(result);
+        assertEquals(List.of(paymentDomain), result);
+    }
 }
