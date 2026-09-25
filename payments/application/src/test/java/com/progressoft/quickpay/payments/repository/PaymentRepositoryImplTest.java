@@ -95,7 +95,7 @@ class PaymentRepositoryImplTest {
     @Test
     void givenInvalidDirection_whenFindAll_thenThrowInvalidPagingException() {
         PaymentFilter filter = new PaymentFilter(null, null, null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         PagingOptions pagingOptions = new PagingOptions(0, 2);
         Assertions.assertThrows(InvalidPagingException.class, () -> repository.findAll(filter, pagingOptions,
                 PaymentSortField.ID, "random"));
@@ -104,10 +104,23 @@ class PaymentRepositoryImplTest {
     @Test
     void givenSenderFilter_whenFindAll_thenReturnPagingResult() {
         PaymentFilter filter = new PaymentFilter(null, "ACC-1", null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         Page<PaymentEntity> page = Page.empty();
         Mockito.when(paymentRepositoryJpa.findAll(Mockito.any(Specification.class), Mockito.any(PageRequest.class))).thenReturn(page);
         PagingResult<Payment> result = repository.findAll(filter, new PagingOptions(0, 2), PaymentSortField.ID, "asc");
         Assertions.assertTrue(result.content().isEmpty());
+    }
+
+    @Test
+    void givenPayments_whenSaveAll_thenReturnSavedPaymentsWithIds() {
+        Payment payment = PaymentTestData.validPayment();
+        PaymentEntity entity = PaymentTestData.newEntity();
+        PaymentEntity savedEntity = PaymentTestData.savedEntity(payment_id);
+        Payment saved = PaymentTestData.savedPayment(payment_id);
+        Mockito.when(paymentMapper.toEntity(payment)).thenReturn(entity);
+        Mockito.when(paymentRepositoryJpa.saveAll(List.of(entity))).thenReturn(List.of(savedEntity));
+        Mockito.when(paymentMapper.toDomain(savedEntity)).thenReturn(saved);
+
+        Assertions.assertEquals(List.of(saved), repository.saveAll(List.of(payment)));
     }
 }

@@ -23,7 +23,7 @@ class CurrencyValidatorTest {
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
         Assertions.assertEquals("currency must not be null or blank", violations.get(0).message());
-        Assertions.assertEquals("CurrencyValidator", violations.get(0).violator());
+        Assertions.assertEquals("currency", violations.get(0).violator());
     }
 
     @Test
@@ -33,7 +33,7 @@ class CurrencyValidatorTest {
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
         Assertions.assertEquals("currency must not be null or blank", violations.get(0).message());
-        Assertions.assertEquals("CurrencyValidator", violations.get(0).violator());
+        Assertions.assertEquals("currency", violations.get(0).violator());
     }
 
     @Test
@@ -43,6 +43,6 @@ class CurrencyValidatorTest {
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
         Assertions.assertEquals("currency is not supported", violations.get(0).message());
-        Assertions.assertEquals("CurrencyValidator", violations.get(0).violator());
+        Assertions.assertEquals("currency", violations.get(0).violator());
     }
 }

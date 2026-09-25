@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments.repository;
 import com.progressoft.quickpay.payments.TemplateTestData;
 import com.progressoft.quickpay.payments.domain.exception.InvalidPagingException;
 import com.progressoft.quickpay.payments.entity.TemplateEntity;
+import com.progressoft.quickpay.payments.entity.TemplateFieldEntity;
 import com.progressoft.quickpay.payments.mapper.TemplateMapper;
 import com.progressoft.quickpay.payments.repository.jpa.TemplateRepositoryJpa;
 import com.progressoft.quickpay.payments.repository.models.TemplateFilter;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.List;
 import java.util.Optional;
 
 class TemplateRepositoryAdapterTest {
@@ -86,5 +88,42 @@ class TemplateRepositoryAdapterTest {
         PagingResult<Template> result = repository.findAll(filter, new PagingOptions(0, 2), TemplateSortField.ID, "asc");
         Assertions.assertTrue(result.content().isEmpty());
         Mockito.verify(repositoryJpa).findAll(Mockito.any(Specification.class), Mockito.any(PageRequest.class));
+    }
+
+    @Test
+    void givenTemplateAlreadyExists_whenSave_thenExistingEntityFieldsAreReplaced() {
+        Template template = TemplateTestData.validTemplate();
+        TemplateEntity existing = TemplateTestData.entity();
+        TemplateFieldEntity oldField = new TemplateFieldEntity();
+        oldField.setName("old");
+        existing.getFields().add(oldField);
+        TemplateFieldEntity newField = new TemplateFieldEntity();
+        newField.setName("senderAccount");
+        Mockito.when(repositoryJpa.findByName(TemplateTestData.templateName)).thenReturn(Optional.of(existing));
+        Mockito.when(mapper.toEmbeddable(template.fields())).thenReturn(List.of(newField));
+        Mockito.when(repositoryJpa.save(existing)).thenReturn(existing);
+        Mockito.when(mapper.toDomain(existing)).thenReturn(template);
+
+        repository.save(template);
+
+        Assertions.assertEquals(List.of(newField), existing.getFields());
+        Mockito.verify(mapper, Mockito.never()).toEntity(Mockito.any());
+    }
+
+    @Test
+    void givenTemplateExists_whenDelete_thenEntityIsDeleted() {
+        TemplateEntity entity = TemplateTestData.entity();
+        Mockito.when(repositoryJpa.findByName(TemplateTestData.templateName)).thenReturn(Optional.of(entity));
+        repository.deleteByName(TemplateTestData.templateName);
+        Mockito.verify(repositoryJpa).delete(entity);
+    }
+
+    @Test
+    void givenTemplatesExist_whenFindAll_thenReturnMappedTemplates() {
+        TemplateEntity entity = TemplateTestData.entity();
+        Template template = TemplateTestData.validTemplate();
+        Mockito.when(repositoryJpa.findAll()).thenReturn(List.of(entity));
+        Mockito.when(mapper.toDomain(entity)).thenReturn(template);
+        Assertions.assertEquals(List.of(template), repository.findAll());
     }
 }

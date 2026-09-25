@@ -22,14 +22,21 @@ class NotesValidatorTest {
         payment.setNotes("T".repeat(5600));
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
-        Assertions.assertEquals("notes length should be less than 500", violations.get(0).message());
-        Assertions.assertEquals("NotesValidator", violations.get(0).violator());
+        Assertions.assertEquals("notes must not be more than 500 chars", violations.get(0).message());
+        Assertions.assertEquals("notes", violations.get(0).violator());
     }
 
     @Test
     void givenNullNotes_whenValidate_thenNoViolation() {
         Payment payment = PaymentTestData.validPayment();
         payment.setNotes(null);
+        Assertions.assertTrue(validator.validate(payment).isEmpty());
+    }
+
+    @Test
+    void givenNotesAtMaxLength_whenValidate_thenNoViolation() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setNotes("n".repeat(500));
         Assertions.assertTrue(validator.validate(payment).isEmpty());
     }
 }

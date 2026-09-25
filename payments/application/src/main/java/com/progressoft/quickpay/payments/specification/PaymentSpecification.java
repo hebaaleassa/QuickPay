@@ -4,8 +4,6 @@ import com.progressoft.quickpay.payments.entity.PaymentEntity;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.math.BigDecimal;
-
 public class PaymentSpecification implements Specification<PaymentEntity> {
     private final SearchCriteria criteria;
 
@@ -32,8 +30,9 @@ public class PaymentSpecification implements Specification<PaymentEntity> {
             String value = escapeLike(criteria.value().toString().toLowerCase());
             return builder.like(builder.lower(root.get(field).as(String.class)), "%" + value + "%", '\\');
         }
-        Expression<BigDecimal> fieldValue = root.get(field);
-        BigDecimal value = (BigDecimal) criteria.value();
+        Expression<Comparable<Object>> fieldValue = root.get(field);
+        @SuppressWarnings("unchecked")
+        Comparable<Object> value = (Comparable<Object>) criteria.value();
         if (operation.equals(">=")) {
             return builder.greaterThanOrEqualTo(fieldValue, value);
         }

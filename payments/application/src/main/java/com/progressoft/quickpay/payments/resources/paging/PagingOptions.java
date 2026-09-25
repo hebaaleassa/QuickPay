@@ -12,5 +12,8 @@ public record PagingOptions(int pageNumber, int pageSize) {
         if (pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
             throw new InvalidPagingException("Page size must be between 1 and " + MAX_PAGE_SIZE);
         }
+        if ((long) pageNumber * pageSize > Integer.MAX_VALUE) {
+            throw new InvalidPagingException("Page number is too large");
+        }
     }
 }

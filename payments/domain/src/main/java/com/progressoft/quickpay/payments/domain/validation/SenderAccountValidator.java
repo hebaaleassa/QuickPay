@@ -11,13 +11,12 @@ public class SenderAccountValidator implements Validator<Payment> {
 
     @Override
     public List<Violation> validate(Payment payment) {
-        List<Violation> violations = new ArrayList<>();
         String sender = payment.getSenderAccount();
         if (sender == null || sender.isBlank()) {
-            return List.of(new Violation("senderAccount can't be blank or null", "senderAccount"));
+            return List.of(new Violation("senderAccount must not be null or blank", "senderAccount"));
         }
         if (sender.trim().length() > 34) {
-            return List.of(new Violation("sender must be at most 35 characters", "senderAccountValidator"));
+            return List.of(new Violation("senderAccount must not be more than 34 chars", "senderAccount"));
         }
         return List.of();
     }

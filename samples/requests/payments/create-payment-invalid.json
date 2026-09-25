@@ -1,0 +1,8 @@
+{
+  "senderAccount": "ACC-100",
+  "receiverAccount": "acc-100",
+  "amount": 10.555,
+  "currency": "GBP",
+  "notes": "every field below breaks a rule",
+  "creditorName": "Ahmad"
+}

@@ -23,4 +23,10 @@ public class ValidationResultTest {
         ValidationResult result = new ValidationResult(violations);
         Assertions.assertThrows(SystemViolationException.class, result::throwExceptionIfViolated);
     }
+
+    @Test
+    void givenViolations_whenGetViolations_thenReturnSameViolations() {
+        Set<Violation> violations = Set.of(new Violation("Invalid Payment", "payment"));
+        Assertions.assertEquals(violations, new ValidationResult(violations).getViolations());
+    }
 }

@@ -11,20 +11,20 @@ public class RecieverAccountValidator implements Validator<Payment> {
         String receiverAccount = payment.getReceiverAccount();
         String senderAccount = payment.getSenderAccount();
         if (receiverAccount == null || receiverAccount.isBlank()) {
-            return List.of(new Violation("Reciever account must not be null or blank",
-                    "RecieverAccountValidator"));
+            return List.of(new Violation("receiverAccount must not be null or blank",
+                    "receiverAccount"));
         }
 
         if (receiverAccount.trim().length() > 34) {
             return List.of(new Violation(
-                    "reciever Account must not be more than 34 chars",
-                    "RecieverAcoountValidator"
+                    "receiverAccount must not be more than 34 chars",
+                    "receiverAccount"
             ));
         }
         if ((senderAccount != null && !senderAccount.isBlank()) &&
                 receiverAccount.trim().equalsIgnoreCase(senderAccount.trim())) {
-            return List.of(new Violation("reciever acount must differ from sender account"
-                    , "RecieverAccountValidator"));
+            return List.of(new Violation("receiverAccount must differ from senderAccount"
+                    , "receiverAccount"));
         }
         return List.of();
     }

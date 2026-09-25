@@ -1,0 +1,7 @@
+{
+  "name": "duplicate-fields",
+  "fields": [
+    { "name": "amount", "length": 20, "required": true },
+    { "name": "amount", "length": 10, "required": true }
+  ]
+}

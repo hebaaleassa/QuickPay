@@ -1,0 +1,11 @@
+{
+  "name": "reordered",
+  "fields": [
+    { "name": "creditorName", "length": 100, "required": true },
+    { "name": "amount", "length": 20, "required": true },
+    { "name": "currency", "length": 3, "required": true },
+    { "name": "senderAccount", "length": 34, "required": true },
+    { "name": "receiverAccount", "length": 34, "required": true },
+    { "name": "notes", "length": 500, "required": false }
+  ]
+}

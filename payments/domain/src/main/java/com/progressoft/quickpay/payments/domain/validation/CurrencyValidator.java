@@ -17,11 +17,11 @@ public class CurrencyValidator implements Validator<Payment> {
         String currency = payment.getCurrency();
         if (currency == null || currency.isBlank()) {
             return List.of(new Violation("currency must not be null or blank",
-                    "CurrencyValidator"));
+                    "currency"));
         }
 
         if (!allowedCurrencies.contains(currency)) {
-            return List.of(new Violation("currency is not supported", "CurrencyValidator"));
+            return List.of(new Violation("currency is not supported", "currency"));
         }
         return List.of();
     }

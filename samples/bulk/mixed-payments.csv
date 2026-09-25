@@ -1,0 +1,7 @@
+senderAccount,receiverAccount,amount,currency,notes,creditorName
+ACC_OK_1,RCV_OK_1,100.00,JOD,valid row,Valid One
+ACC_NEG,RCV_NEG,-5,JOD,negative amount,Bad Amount
+ACC_SAME,ACC_SAME,10,GBP,same accounts and bad currency,Bad
+ACC_3DP,RCV_3DP,10.999,JOD,three decimal places,Three Decimals
+ACC_SHORT,RCV_SHORT,10,JOD
+,RCV_NO_SENDER,10,JOD,missing sender,No Sender

@@ -73,15 +73,16 @@ public class PaymentRepositoryImpl implements PaymentRepository, PaymentSearchRe
                 createSpecification("receiverAccount", "like", filter.receiverAccount()),
                 createSpecification("currency", "=", filter.currency()),
                 createSpecification("status", "=", filter.status()),
-                createSpecification("notes", "=", filter.notes()),
+                createSpecification("notes", "like", filter.notes()),
                 createSpecification("creditorName", "like", filter.creditorName()),
-                createSpecification("createdAt", "=", filter.createdAt()),
+                createSpecification("createdAt", ">=", filter.createdFrom()),
+                createSpecification("createdAt", "<=", filter.createdTo()),
                 createSpecification("amount", ">=", filter.minAmount()),
                 createSpecification("amount", "<=", filter.maxAmount()));
     }
 
     private Specification<PaymentEntity> createSpecification(String field, String operation, Object value) {
-        if (value == null) {
+        if (value == null || value instanceof String text && text.isBlank()) {
             return Specification.unrestricted();
         }
         return new PaymentSpecification(new SearchCriteria(field, operation, value));

@@ -1,0 +1,1345 @@
+{
+  "info": {
+    "name": "QuickPay Payments API",
+    "description": "Payments and templates APIs of the QuickPay payments service.\n\nRun the app first, e.g. from payments/application: `mvn spring-boot:run -Dspring-boot.run.profiles=h2,liquibase`.\n\nAuth: HTTP Basic, set on the collection (admin/56789 has PAYMENT and TEMPLATE roles; tolay/12345 has PAYMENT only).\n\nBulk upload requests read files from samples/bulk, relative to the Postman working directory: set it to the project root (Settings > General > Working directory), or run with `newman run postman/quickpay.postman_collection.json --working-dir .` from the project root.\n\nFolders are ordered so the collection can be run top to bottom with the Collection Runner.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "username",
+      "value": "admin"
+    },
+    {
+      "key": "password",
+      "value": "56789"
+    },
+    {
+      "key": "paymentId",
+      "value": "1",
+      "description": "Set by \"Create payment\""
+    },
+    {
+      "key": "templateName",
+      "value": "reordered"
+    },
+    {
+      "key": "templateId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Templates",
+      "item": [
+        {
+          "name": "Create template (reordered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"fields kept in order\", () => pm.expect(pm.response.json().fields[0].name).to.eql(\"creditorName\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reordered\",\n  \"fields\": [\n    { \"name\": \"creditorName\", \"length\": 100, \"required\": true },\n    { \"name\": \"amount\", \"length\": 20, \"required\": true },\n    { \"name\": \"currency\", \"length\": 3, \"required\": true },\n    { \"name\": \"senderAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"receiverAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"notes\", \"length\": 500, \"required\": false }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates a template whose columns are in a different order than the default one. Used by \"Bulk upload - custom template\"."
+          }
+        },
+        {
+          "name": "Create template - duplicate name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"explains the duplicate\", () => pm.expect(pm.response.text()).to.include(\"already exists\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reordered\",\n  \"fields\": [\n    { \"name\": \"creditorName\", \"length\": 100, \"required\": true },\n    { \"name\": \"amount\", \"length\": 20, \"required\": true },\n    { \"name\": \"currency\", \"length\": 3, \"required\": true },\n    { \"name\": \"senderAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"receiverAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"notes\", \"length\": 500, \"required\": false }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create template - duplicate fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"duplicate-fields\",\n  \"fields\": [\n    { \"name\": \"amount\", \"length\": 20, \"required\": true },\n    { \"name\": \"amount\", \"length\": 10, \"required\": true }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get template by name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/name/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "name",
+                "{{templateName}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get template by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is one of [200, 400]\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": "Template ids are not returned by the API; set the templateId collection variable to an id from the database. Unknown ids return 400."
+          }
+        },
+        {
+          "name": "List templates - filter, sort, paging",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"paged response\", () => pm.expect(pm.response.json()).to.have.keys(\"content\",\"pageNumber\",\"pageSize\",\"totalElements\",\"totalPages\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates?name=e&sortBy=name&direction=asc&pageNumber=0&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "e",
+                  "description": "Case-insensitive partial match"
+                },
+                {
+                  "key": "id",
+                  "value": "1",
+                  "disabled": true,
+                  "description": "Exact match"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name",
+                  "description": "id | name (case-insensitive)"
+                },
+                {
+                  "key": "direction",
+                  "value": "asc",
+                  "description": "asc | desc"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "0",
+                  "description": "0-based"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "1..100 (default 2)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get default template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"has the 6 payment columns\", () => pm.expect(pm.response.json().fields.length).to.eql(6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/name/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "name",
+                "default"
+              ]
+            },
+            "description": "The default template is bundled with the app (templates/default-template.json) and is read-only."
+          }
+        },
+        {
+          "name": "Update default template - read-only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"read-only message\", () => pm.expect(pm.response.text()).to.eql(\"The default template is read-only\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "default"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": [\n    { \"name\": \"senderAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"receiverAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"amount\", \"length\": 20, \"required\": true },\n    { \"name\": \"currency\", \"length\": 3, \"required\": true },\n    { \"name\": \"creditorName\", \"length\": 100, \"required\": true },\n    { \"name\": \"notes\", \"length\": 250, \"required\": false }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete default template - read-only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "default"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Payments",
+      "item": [
+        {
+          "name": "Create payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"paymentId\", body.id);",
+                  "pm.test(\"pending with an id\", () => { pm.expect(body.id).to.be.a(\"number\"); pm.expect(body.status).to.eql(\"PENDING\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderAccount\": \"JO94CBJO0010000000000131000302\",\n  \"receiverAccount\": \"JO71CBJO0000000000001234567890\",\n  \"amount\": 1500.00,\n  \"currency\": \"JOD\",\n  \"notes\": \"September salary\",\n  \"creditorName\": \"Ahmad Ali\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create payment - minimal (no notes)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"amount has 2 decimals\", () => pm.expect(pm.response.json().amount).to.eql(10.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderAccount\": \"ACC-100\",\n  \"receiverAccount\": \"ACC-200\",\n  \"amount\": 10,\n  \"currency\": \"USD\",\n  \"creditorName\": \"Lina Saleh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create payment - invalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "const violators = pm.response.json().map(v => v.violator);",
+                  "pm.test(\"every broken field reported\", () => pm.expect(violators).to.include.members([\"receiverAccount\",\"amount\",\"currency\",\"creditorName\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderAccount\": \"ACC-100\",\n  \"receiverAccount\": \"acc-100\",\n  \"amount\": 10.555,\n  \"currency\": \"GBP\",\n  \"notes\": \"every field below breaks a rule\",\n  \"creditorName\": \"Ahmad\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get payment by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"same payment\", () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get(\"paymentId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{paymentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get payment - not found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List payments - defaults",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "description": "Defaults: pageNumber=0, pageSize=2, sortBy=id, direction=asc."
+          }
+        },
+        {
+          "name": "List payments - filter, sort, paging",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"only JOD\", () => pm.response.json().content.forEach(p => pm.expect(p.currency).to.eql(\"JOD\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?currency=JOD&sortBy=amount&direction=desc&pageNumber=0&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "JOD",
+                  "description": "Exact match (JOD, USD, EUR)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "amount",
+                  "description": "id | senderAccount | receiverAccount | amount | currency | notes | creditorName | status | createdAt"
+                },
+                {
+                  "key": "direction",
+                  "value": "desc",
+                  "description": "asc | desc"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "0",
+                  "description": "0-based"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "1..100 (default 2)"
+                },
+                {
+                  "key": "id",
+                  "value": "1",
+                  "disabled": true,
+                  "description": "Exact match"
+                },
+                {
+                  "key": "senderAccount",
+                  "value": "JO94",
+                  "disabled": true,
+                  "description": "Case-insensitive partial match"
+                },
+                {
+                  "key": "receiverAccount",
+                  "value": "JO71",
+                  "disabled": true,
+                  "description": "Case-insensitive partial match"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true,
+                  "description": "PENDING | COMPLETED | REJECTED"
+                },
+                {
+                  "key": "notes",
+                  "value": "salary",
+                  "disabled": true,
+                  "description": "Case-insensitive partial match"
+                },
+                {
+                  "key": "creditorName",
+                  "value": "ali",
+                  "disabled": true,
+                  "description": "Case-insensitive partial match"
+                },
+                {
+                  "key": "minAmount",
+                  "value": "100",
+                  "disabled": true,
+                  "description": "Inclusive"
+                },
+                {
+                  "key": "maxAmount",
+                  "value": "2000",
+                  "disabled": true,
+                  "description": "Inclusive"
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "2026-01-01T00:00:00Z",
+                  "disabled": true,
+                  "description": "Inclusive, ISO-8601 UTC e.g. 2026-09-25T00:00:00Z"
+                },
+                {
+                  "key": "createdTo",
+                  "value": "2026-12-31T23:59:59.999999Z",
+                  "disabled": true,
+                  "description": "Inclusive, ISO-8601 UTC"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List payments - created in the last 24 hours",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const now = new Date();",
+                  "pm.variables.set(\"createdFrom\", new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());",
+                  "pm.variables.set(\"createdTo\", now.toISOString());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?createdFrom={{createdFrom}}&createdTo={{createdTo}}&pageSize=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "createdFrom",
+                  "value": "{{createdFrom}}",
+                  "description": "Set by the pre-request script"
+                },
+                {
+                  "key": "createdTo",
+                  "value": "{{createdTo}}",
+                  "description": "Set by the pre-request script"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "createdFrom/createdTo take ISO-8601 instants. A \"+\" offset must be URL-encoded as %2B."
+          }
+        },
+        {
+          "name": "List payments - invalid page size",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"explains the limit\", () => pm.expect(pm.response.text()).to.eql(\"Page size must be between 1 and 100\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?pageSize=101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "101"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List payments - invalid sort field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?sortBy=foo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "foo"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Bulk Upload",
+      "item": [
+        {
+          "name": "Bulk upload - CSV, default template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"all rows saved\", () => { pm.expect(body.successCount).to.eql(3); pm.expect(body.failureCount).to.eql(0); pm.expect(body.validRows[0].id).to.be.a(\"number\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/bulk/valid-payments.csv",
+                  "description": "Relative to the project root (set it as the Postman working directory)"
+                }
+              ]
+            },
+            "description": "No metadata part, so the default template is used."
+          }
+        },
+        {
+          "name": "Bulk upload - TXT (pipe-delimited)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"all rows saved\", () => pm.expect(pm.response.json().successCount).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/bulk/valid-payments.txt",
+                  "description": "Relative to the project root (set it as the Postman working directory)"
+                },
+                {
+                  "key": "metadata",
+                  "type": "text",
+                  "value": "{\"templateName\": \"default\"}",
+                  "contentType": "application/json",
+                  "description": "Optional. Omit it to use the default template"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bulk upload - mixed valid and invalid rows",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"errors reported per row\", () => pm.expect(body.failureCount).to.eql(5));",
+                  "pm.test(\"valid row reported but not saved\", () => { pm.expect(body.successCount).to.eql(1); pm.expect(body.validRows[0].id).to.eql(null); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/bulk/mixed-payments.csv",
+                  "description": "Relative to the project root (set it as the Postman working directory)"
+                }
+              ]
+            },
+            "description": "With payments.persist-db-on-error=false (default) nothing is saved when any row fails; validRows lists the rows that would have been saved."
+          }
+        },
+        {
+          "name": "Bulk upload - custom template (reordered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"rows saved with the custom template\", () => pm.expect(pm.response.json().successCount).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/bulk/reordered-template-payments.csv",
+                  "description": "Relative to the project root (set it as the Postman working directory)"
+                },
+                {
+                  "key": "metadata",
+                  "type": "text",
+                  "value": "{\"templateName\": \"{{templateName}}\"}",
+                  "contentType": "application/json",
+                  "description": "Optional. Omit it to use the default template"
+                }
+              ]
+            },
+            "description": "Requires \"Create template (reordered)\" to have run first."
+          }
+        },
+        {
+          "name": "Bulk upload - unknown template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/bulk/valid-payments.csv",
+                  "description": "Relative to the project root (set it as the Postman working directory)"
+                },
+                {
+                  "key": "metadata",
+                  "type": "text",
+                  "value": "{\"templateName\": \"does-not-exist\"}",
+                  "contentType": "application/json",
+                  "description": "Optional. Omit it to use the default template"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Templates - update and delete",
+      "item": [
+        {
+          "name": "Update template (reordered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"fields replaced\", () => pm.expect(pm.response.json().fields[0].name).to.eql(\"senderAccount\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "{{templateName}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": [\n    { \"name\": \"senderAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"receiverAccount\", \"length\": 34, \"required\": true },\n    { \"name\": \"amount\", \"length\": 20, \"required\": true },\n    { \"name\": \"currency\", \"length\": 3, \"required\": true },\n    { \"name\": \"creditorName\", \"length\": 100, \"required\": true },\n    { \"name\": \"notes\", \"length\": 250, \"required\": false }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The name comes from the path; a name in the body is ignored."
+          }
+        },
+        {
+          "name": "Delete template (reordered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "{{templateName}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get deleted template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/name/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates",
+                "name",
+                "{{templateName}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Security",
+      "item": [
+        {
+          "name": "PAYMENT role can list payments (tolay)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "tolay",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "12345",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PAYMENT role cannot access templates (tolay)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "templates"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "tolay",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "12345",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "No credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

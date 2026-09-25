@@ -20,7 +20,7 @@ public class TemplateReaderImplTest {
     void setUp() {
         jsonTemplateRepository = Mockito.mock(JsonTemplateRepository.class);
         templateRepositoryAdapter = Mockito.mock(TemplateRepositoryAdapter.class);
-        templateReader = new TemplateReaderImpl(jsonTemplateRepository, templateRepositoryAdapter);
+        templateReader = new TemplateReaderImpl(jsonTemplateRepository, templateRepositoryAdapter, "default");
     }
 
     @Test
@@ -37,5 +37,19 @@ public class TemplateReaderImplTest {
         Mockito.when(templateRepositoryAdapter.findAll()).thenReturn(List.of(template));
         Assertions.assertEquals(2, templateReader.findAll().size());
     }
-}
 
+    @Test
+    void givenDefaultTemplateName_whenFindByName_thenReadFromJsonRepository() {
+        Template template = TemplateTestData.validTemplate();
+        Mockito.when(jsonTemplateRepository.findByName("default")).thenReturn(Optional.of(template));
+        Assertions.assertSame(template, templateReader.findByName("default").orElseThrow());
+        Mockito.verifyNoInteractions(templateRepositoryAdapter);
+    }
+
+    @Test
+    void givenCustomTemplateName_whenFindByName_thenJsonRepositoryIsNotUsed() {
+        Mockito.when(templateRepositoryAdapter.findByName("custom")).thenReturn(Optional.empty());
+        Assertions.assertTrue(templateReader.findByName("custom").isEmpty());
+        Mockito.verifyNoInteractions(jsonTemplateRepository);
+    }
+}

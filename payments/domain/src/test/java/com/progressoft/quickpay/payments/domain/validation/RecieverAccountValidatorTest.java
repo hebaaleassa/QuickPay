@@ -22,8 +22,8 @@ class RecieverAccountValidatorTest {
         payment.setReceiverAccount(null);
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
-        Assertions.assertEquals("Reciever account must not be null or blank", violations.get(0).message());
-        Assertions.assertEquals("RecieverAccountValidator", violations.get(0).violator());
+        Assertions.assertEquals("receiverAccount must not be null or blank", violations.get(0).message());
+        Assertions.assertEquals("receiverAccount", violations.get(0).violator());
     }
 
     @Test
@@ -32,8 +32,8 @@ class RecieverAccountValidatorTest {
         payment.setReceiverAccount("ACC-1");
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
-        Assertions.assertEquals("reciever acount must differ from sender account", violations.get(0).message());
-        Assertions.assertEquals("RecieverAccountValidator", violations.get(0).violator());
+        Assertions.assertEquals("receiverAccount must differ from senderAccount", violations.get(0).message());
+        Assertions.assertEquals("receiverAccount", violations.get(0).violator());
     }
 
     @Test
@@ -42,7 +42,45 @@ class RecieverAccountValidatorTest {
         payment.setReceiverAccount("acc-1");
         List<Violation> violations = validator.validate(payment);
         Assertions.assertEquals(1, violations.size());
-        Assertions.assertEquals("reciever acount must differ from sender account", violations.get(0).message());
-        Assertions.assertEquals("RecieverAccountValidator", violations.get(0).violator());
+        Assertions.assertEquals("receiverAccount must differ from senderAccount", violations.get(0).message());
+        Assertions.assertEquals("receiverAccount", violations.get(0).violator());
+    }
+
+    @Test
+    void givenBlankReceiver_whenValidate_thenViolationReturned() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setReceiverAccount("  ");
+        Assertions.assertEquals("receiverAccount must not be null or blank", validator.validate(payment).get(0).message());
+    }
+
+    @Test
+    void givenReceiverAtMaxLength_whenValidate_thenNoViolation() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setReceiverAccount("B".repeat(34));
+        Assertions.assertTrue(validator.validate(payment).isEmpty());
+    }
+
+    @Test
+    void givenReceiverAboveMaxLength_whenValidate_thenViolationReturned() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setReceiverAccount("B".repeat(35));
+        List<Violation> violations = validator.validate(payment);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("receiverAccount must not be more than 34 chars", violations.get(0).message());
+        Assertions.assertEquals("receiverAccount", violations.get(0).violator());
+    }
+
+    @Test
+    void givenNullSender_whenValidate_thenReceiverIsNotComparedToSender() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setSenderAccount(null);
+        Assertions.assertTrue(validator.validate(payment).isEmpty());
+    }
+
+    @Test
+    void givenBlankSender_whenValidate_thenReceiverIsNotComparedToSender() {
+        Payment payment = PaymentTestData.validPayment();
+        payment.setSenderAccount(" ");
+        Assertions.assertTrue(validator.validate(payment).isEmpty());
     }
 }

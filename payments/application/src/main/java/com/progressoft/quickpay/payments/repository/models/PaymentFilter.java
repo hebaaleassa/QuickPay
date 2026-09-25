@@ -7,6 +7,6 @@ import java.time.Instant;
 
 public record PaymentFilter(Long id, String senderAccount, String receiverAccount,
                             String currency, PaymentStatus status, String notes,
-                            String creditorName, Instant createdAt,
+                            String creditorName, Instant createdFrom, Instant createdTo,
                             BigDecimal maxAmount, BigDecimal minAmount) {
 }

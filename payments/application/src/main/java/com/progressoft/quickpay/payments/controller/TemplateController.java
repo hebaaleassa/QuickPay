@@ -41,7 +41,7 @@ public class TemplateController {
     public PagingResult<TemplateResponse> getAll(@RequestParam(required = false) Long id,
                                                  @RequestParam(required = false) String name,
                                                  @RequestParam(defaultValue = "0") int pageNumber,
-                                                 @RequestParam(defaultValue = "2") int pageSize,
+                                                 @RequestParam(defaultValue = "20") int pageSize,
                                                  @RequestParam(defaultValue = "id") String sortBy,
                                                  @RequestParam(defaultValue = "asc") String direction) {
         TemplateFilter filter = new TemplateFilter(id, name);

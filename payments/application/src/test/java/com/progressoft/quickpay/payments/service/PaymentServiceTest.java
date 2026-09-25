@@ -1,10 +1,13 @@
 package com.progressoft.quickpay.payments.service;
 
 import com.progressoft.quickpay.payments.PaymentTestData;
+import com.progressoft.quickpay.payments.domain.exception.InvalidSortFieldException;
 import com.progressoft.quickpay.payments.domain.exception.SystemViolationException;
+import com.progressoft.quickpay.payments.domain.model.payment.BulkUploadResult;
 import com.progressoft.quickpay.payments.domain.model.payment.Payment;
 import com.progressoft.quickpay.payments.domain.repository.PaymentRepository;
 import com.progressoft.quickpay.payments.domain.usecases.CreatePaymentUseCase;
+import com.progressoft.quickpay.payments.domain.usecases.UploadBulkPaymentUseCase;
 import com.progressoft.quickpay.payments.repository.PaymentSearchRepository;
 import com.progressoft.quickpay.payments.repository.models.PaymentFilter;
 import com.progressoft.quickpay.payments.resources.paging.PagingOptions;
@@ -18,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +34,8 @@ class PaymentServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private PaymentSearchRepository searchRepository;
+    @Mock
+    private UploadBulkPaymentUseCase uploadBulkPaymentUseCase;
     @InjectMocks
     private PaymentService service;
 
@@ -75,10 +81,36 @@ class PaymentServiceTest {
     @Test
     void givenValidSort_whenFindAll_thenCallSearchRepository() {
         PaymentFilter filter = new PaymentFilter(null, null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         PagingOptions pagingOptions = new PagingOptions(0, 2);
         PagingResult<Payment> result = new PagingResult<>(List.of(), 0, 2, 0, 0);
         Mockito.when(searchRepository.findAll(filter, pagingOptions, PaymentSortField.ID, "asc")).thenReturn(result);
         Assertions.assertSame(result, service.findAll(filter, pagingOptions, "id", "asc"));
+    }
+
+    @Test
+    void givenTemplateAndFile_whenUploadBulk_thenUseCaseResultIsReturned() {
+        Path file = Path.of("payments.csv");
+        BulkUploadResult result = new BulkUploadResult(0, 0, List.of(), List.of());
+        Mockito.when(uploadBulkPaymentUseCase.execute("default", file)).thenReturn(result);
+        Assertions.assertSame(result, service.uploadBulk("default", file));
+    }
+
+    @Test
+    void givenUnknownSortField_whenFindAll_thenThrowInvalidSortFieldException() {
+        PaymentFilter filter = new PaymentFilter(null, null, null, null,
+                null, null, null, null, null, null, null);
+        Assertions.assertThrows(InvalidSortFieldException.class,
+                () -> service.findAll(filter, new PagingOptions(0, 2), "foo", "asc"));
+        Mockito.verifyNoInteractions(searchRepository);
+    }
+
+    @Test
+    void givenSortFieldInDifferentCase_whenFindAll_thenSortFieldIsResolved() {
+        PaymentFilter filter = new PaymentFilter(null, null, null, null,
+                null, null, null, null, null, null, null);
+        PagingOptions pagingOptions = new PagingOptions(0, 2);
+        service.findAll(filter, pagingOptions, "CreditorName", "desc");
+        Mockito.verify(searchRepository).findAll(filter, pagingOptions, PaymentSortField.CREDITOR_NAME, "desc");
     }
 }

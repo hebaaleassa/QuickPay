@@ -9,15 +9,21 @@ import java.math.BigDecimal;
 
 public class PaymentRowMapper implements RowMapper<ParsedPayment> {
 
+    private final PaymentMapper paymentMapper;
+
+    public PaymentRowMapper(PaymentMapper paymentMapper) {
+        this.paymentMapper = paymentMapper;
+    }
+
     @Override
     public ParsedPayment map(ParsedRow row) {
         Payment payment = new Payment();
-        payment.setSenderAccount(row.get("senderAccount"));
-        payment.setReceiverAccount(row.get("receiverAccount"));
-        payment.setAmount(new BigDecimal(row.get("amount")));
-        payment.setCurrency(row.get("currency"));
-        payment.setNotes(row.get("notes"));
-        payment.setCreditorName(row.get("creditorName"));
+        payment.setSenderAccount(paymentMapper.trim(row.get("senderAccount")));
+        payment.setReceiverAccount(paymentMapper.trim(row.get("receiverAccount")));
+        payment.setAmount(paymentMapper.amount(new BigDecimal(row.get("amount"))));
+        payment.setCurrency(paymentMapper.trim(row.get("currency")));
+        payment.setNotes(paymentMapper.trim(row.get("notes")));
+        payment.setCreditorName(paymentMapper.trim(row.get("creditorName")));
         return new ParsedPayment(row.rowNumber(), payment);
     }
 }

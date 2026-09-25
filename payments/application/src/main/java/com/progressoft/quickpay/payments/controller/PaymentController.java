@@ -63,7 +63,7 @@ public class PaymentController {
     @GetMapping
     public PagingResult<PaymentResponse> getAll(@ModelAttribute PaymentFilter filter,
                                                 @RequestParam(defaultValue = "0") int pageNumber,
-                                                @RequestParam(defaultValue = "2") int pageSize,
+                                                @RequestParam(defaultValue = "20") int pageSize,
                                                 @RequestParam(defaultValue = "id") String sortBy,
                                                 @RequestParam(defaultValue = "asc") String direction) {
 

@@ -1,0 +1,7 @@
+{
+  "senderAccount": "ACC-100",
+  "receiverAccount": "ACC-200",
+  "amount": 10,
+  "currency": "USD",
+  "creditorName": "Lina Saleh"
+}

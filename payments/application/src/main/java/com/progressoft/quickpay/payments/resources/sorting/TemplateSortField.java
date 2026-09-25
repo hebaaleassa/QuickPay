@@ -15,7 +15,7 @@ public enum TemplateSortField {
     }
 
     public static Optional<TemplateSortField> from(String fieldName) {
-        return Arrays.stream(values()).filter(field -> field.fieldName.equals(fieldName)).findFirst();
+        return Arrays.stream(values()).filter(field -> field.fieldName.equalsIgnoreCase(fieldName)).findFirst();
     }
 
     public String fieldName() {

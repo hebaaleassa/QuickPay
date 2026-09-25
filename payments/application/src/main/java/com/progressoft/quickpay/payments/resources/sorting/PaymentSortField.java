@@ -22,7 +22,7 @@ public enum PaymentSortField {
     }
 
     public static Optional<PaymentSortField> from(String fieldName) {
-        return Arrays.stream(values()).filter(field -> field.fieldName.equals(fieldName)).findFirst();
+        return Arrays.stream(values()).filter(field -> field.fieldName.equalsIgnoreCase(fieldName)).findFirst();
     }
 
     public String fieldName() {

@@ -12,6 +12,7 @@ import com.progressoft.training.fileparser.usecase.ParseFileUseCase;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,13 +63,12 @@ public class UploadBulkPaymentUseCase {
     }
 
     private void applyPayment(ParsedPayment parsedPayment, List<Payment> validPayment) {
-        ValidationResult validationResult = validatorChain.validate(parsedPayment.payment());
-        validationResult.throwExceptionIfViolated();
-
         Payment payment = parsedPayment.payment();
-        payment.setCreatedAt(Instant.now());
+        validatorChain.validate(payment).throwExceptionIfViolated();
+
+        payment.setCreatedAt(Instant.now().truncatedTo(ChronoUnit.MICROS));
         payment.setStatus(PaymentStatus.PENDING);
 
-        validPayment.add(parsedPayment.payment());
+        validPayment.add(payment);
     }
 }

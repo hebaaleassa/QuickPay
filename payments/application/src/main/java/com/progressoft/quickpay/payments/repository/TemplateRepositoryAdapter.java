@@ -64,7 +64,7 @@ public class TemplateRepositoryAdapter implements TemplateRepositoryInterface, T
     @Override
     public PagingResult<Template> findAll(TemplateFilter filter, PagingOptions pagingOptions, TemplateSortField sortField, String direction) {
         Sort.Direction sortingDirection = Sort.Direction.fromOptionalString(direction)
-                .orElseThrow(() -> new InvalidPagingException("direction must be 'asc' or 'desc"));
+                .orElseThrow(() -> new InvalidPagingException("direction must be 'asc' or 'desc'"));
         Sort sort = Sort.by(sortingDirection, sortField.fieldName()).and(Sort.by("id"));
         PageRequest pageRequest = PageRequest.of(pagingOptions.pageNumber(), pagingOptions.pageSize(), sort);
         Page<TemplateEntity> page = repository.findAll(createFilter(filter), pageRequest);
@@ -83,7 +83,7 @@ public class TemplateRepositoryAdapter implements TemplateRepositoryInterface, T
     }
 
     private Specification<TemplateEntity> createSpecification(String field, String operation, Object value) {
-        if (value == null) {
+        if (value == null || value instanceof String text && text.isBlank()) {
             return Specification.unrestricted();
         }
         return new TemplateSpecification(new SearchCriteria(field, operation, value));

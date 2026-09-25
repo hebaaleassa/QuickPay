@@ -1,0 +1,3 @@
+creditorName,amount,currency,senderAccount,receiverAccount,notes
+Ahmad Ali,75.00,JOD,ACC_REO_1,RCV_REO_1,uses the reordered template
+Lina Saleh,12.5,USD,ACC_REO_2,RCV_REO_2,

@@ -3,6 +3,7 @@ package com.progressoft.quickpay.payments.repository;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.repository.JsonTemplateRepository;
 import com.progressoft.training.fileparser.repository.TemplateReader;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,17 +15,20 @@ public class TemplateReaderImpl implements TemplateReader {
 
     private final JsonTemplateRepository jsonTemplateRepository;
     private final TemplateRepositoryAdapter templateRepositoryAdapter;
+    private final String defaultTemplateName;
 
-    public TemplateReaderImpl(JsonTemplateRepository jsonTemplateRepository, TemplateRepositoryAdapter templateRepositoryAdapter) {
+    public TemplateReaderImpl(JsonTemplateRepository jsonTemplateRepository, TemplateRepositoryAdapter templateRepositoryAdapter,
+                              @Value("${payments.default-template-name:default}") String defaultTemplateName) {
 
         this.jsonTemplateRepository = jsonTemplateRepository;
         this.templateRepositoryAdapter = templateRepositoryAdapter;
+        this.defaultTemplateName = defaultTemplateName;
     }
 
     @Override
     public Optional<Template> findByName(String name) {
 
-        if ("default".equals(name)) {
+        if (defaultTemplateName.equals(name)) {
             return jsonTemplateRepository.findByName(name);
         }
 

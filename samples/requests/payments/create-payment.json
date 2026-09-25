@@ -1,0 +1,8 @@
+{
+  "senderAccount": "JO94CBJO0010000000000131000302",
+  "receiverAccount": "JO71CBJO0000000000001234567890",
+  "amount": 1500.00,
+  "currency": "JOD",
+  "notes": "September salary",
+  "creditorName": "Ahmad Ali"
+}
