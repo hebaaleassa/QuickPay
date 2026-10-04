@@ -1,0 +1,40 @@
+# PRODUCTION MODE: one jar (backend + built Angular files) serving everything on :8080.
+# Run (nothing else needed, Docker builds Angular and the jar itself):
+#   docker compose -f docker-compose.prod.yaml up --build
+# Needs the file-parser project in a folder next to quickpay (../file-parser).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - quickpay-prod-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      # file-parser-core lives in a sibling folder; the Dockerfile builds it first
+      additional_contexts:
+        file-parser: ../file-parser
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres,liquibase
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: paymentsdb
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  quickpay-prod-db-data:

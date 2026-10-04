@@ -1,0 +1,51 @@
+# DEV MODE: Angular dev server on :4200 (live reload), backend on :8080.
+# Prerequisite: cd payments && ./mvnw package   (builds the backend jar)
+# Run:          docker compose -f docker-compose.dev.yaml up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - quickpay-dev-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: payments/application
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres,liquibase
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: paymentsdb
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "4200:4200"
+    environment:
+      API_TARGET: http://app:8080
+    volumes:
+      - ./frontend:/app              # edit code on your machine, the container reloads
+      - /app/node_modules            # keep the container's own node_modules
+    depends_on:
+      - app
+
+volumes:
+  quickpay-dev-db-data:

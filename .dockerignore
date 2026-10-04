@@ -1,0 +1,8 @@
+.git
+.idea
+**/node_modules
+**/target
+**/.angular
+frontend/dist
+payments/data
+payments/application/src/main/resources/static
