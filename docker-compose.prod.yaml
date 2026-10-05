@@ -1,7 +1,7 @@
 # PRODUCTION MODE: one jar (backend + built Angular files) serving everything on :8080.
 # Run (nothing else needed, Docker builds Angular and the jar itself):
 #   docker compose -f docker-compose.prod.yaml up --build
-# Needs the file-parser project in a folder next to quickpay (../file-parser).
+# Needs file-parser-core installed in your local Maven repo (run "mvn install" in the file-parser project once).
 services:
   db:
     image: postgres:16-alpine
@@ -20,9 +20,9 @@ services:
   app:
     build:
       context: .
-      # file-parser-core lives in a sibling folder; the Dockerfile builds it first
+      # file-parser-core is not on Maven Central; give the build the copy from the host's local Maven repo
       additional_contexts:
-        file-parser: ../file-parser
+        m2local: ${HOME}/.m2/repository/com/progressoft/training
     ports:
       - "8080:8080"
     environment:
