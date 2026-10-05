@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .build(),
                 User.withUsername("admin")
                         .password(passwordEncoder.encode("admin123"))
-                        .roles("TEMPLATE")
+                        .roles("TEMPLATE", "ADMIN")
                         .build()
         );
     }
@@ -105,6 +105,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/*.js", "/*.css").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/revoke/*").hasRole("ADMIN")
                         .requestMatchers("/api/payments/**").hasAnyRole("PAYMENT", "TEMPLATE")
                         .requestMatchers("/api/templates/**").hasRole("TEMPLATE")
                         .anyRequest().authenticated())

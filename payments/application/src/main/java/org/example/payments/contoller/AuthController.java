@@ -5,11 +5,13 @@ import java.util.Map;
 import org.example.payments.config.JwtService;
 import org.example.payments.config.TokenVersionStore;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,5 +55,16 @@ public class AuthController {
     @PostMapping("/logout-all")
     public void logoutAll(Authentication authentication) {
         versions.increment(authentication.getName());
+    }
+
+    @PostMapping("/revoke/{username}")
+    public ResponseEntity<Void> revoke(@PathVariable String username) {
+        try {
+            users.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+        versions.increment(username);
+        return ResponseEntity.noContent().build();
     }
 }
