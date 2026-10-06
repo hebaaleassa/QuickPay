@@ -1,5 +1,6 @@
 package org.example.payments.contoller;
 
+import org.example.model.PageResult;
 import com.progressoft.training.fileparser.domain.FieldDefinition;
 import com.progressoft.training.fileparser.domain.Template;
 import org.example.payments.config.SecurityConfig;
@@ -175,9 +176,11 @@ class TemplateControllerTest {
     public void givenValidRequest_whenGetAll_thenReturnOk()
             throws Exception {
 
-        when(templateService.findAll()).thenReturn(List.of(template));
+        when(templateService.findAll(0, 10)).thenReturn(new PageResult<>(List.of(template), 0, 10, 1));
         when(mapper.toResponse(template)).thenReturn((response));
-        mockMvc.perform(get("/api/templates")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/templates")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("payment-default"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
 

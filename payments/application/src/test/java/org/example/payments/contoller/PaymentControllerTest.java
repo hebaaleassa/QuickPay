@@ -1,6 +1,7 @@
 package org.example.payments.contoller;
 
 import org.example.model.BulkResult;
+import org.example.model.PageResult;
 import org.example.payments.config.SecurityConfig;
 import org.example.payments.exception.GlobalExceptionHandler;
 import org.example.payments.mapper.PaymentMapperImpl;
@@ -73,12 +74,14 @@ class PaymentControllerTest {
 
     @Test
     void givenValidInput_whenFindAllPayment_thenReturnOk() throws Exception {
-        when(paymentService.findAll()).thenReturn(List.of(payment));
+        when(paymentService.findAll(0, 10)).thenReturn(new PageResult<>(List.of(payment), 0, 10, 1));
         when(paymentMapper.toResponse(payment)).thenReturn(paymentResponse);
 
         mockMvc.perform(get("/api/payments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L));
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test

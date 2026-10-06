@@ -38,6 +38,10 @@ public class PaymentService {
         return repository.findAll();
     }
 
+    public PageResult<Payment> findAll(int page, int size) {
+        return repository.findAll(page, size);
+    }
+
     public BulkResult uploadBulk(String fileName, Path tempFile) {
 //        UploadBulkCommand command = new UploadBulkCommand(tempFile, fileName);
         ParseFileUseCase.ParseFileCommand command = new ParseFileUseCase.ParseFileCommand(fileName, tempFile);

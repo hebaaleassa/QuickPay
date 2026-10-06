@@ -1,5 +1,9 @@
 package org.example.payments.repository;
 
+import org.example.model.PageResult;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.example.model.Payment;
 import org.example.payments.mapper.PaymentMapper;
 import org.example.payments.model.PaymentEntity;
@@ -95,6 +99,19 @@ class PaymentRepositoryImplTest {
         assertEquals(paymentDomain, result.getFirst());
         verify(mapper).toDomain(paymentEntity);
 
+    }
+
+    @Test
+    public void givenPageAndSize_whenFindAllPaged_thenReturnsMappedPage() {
+        when(repository.findAll(PageRequest.of(1, 5, Sort.by("id"))))
+                .thenReturn(new PageImpl<>(List.of(paymentEntity), PageRequest.of(1, 5), 6));
+        when(mapper.toDomain(paymentEntity)).thenReturn(paymentDomain);
+
+        PageResult<Payment> result = paymentRepositoryImpl.findAll(1, 5);
+
+        assertEquals(List.of(paymentDomain), result.content());
+        assertEquals(6, result.totalElements());
+        assertEquals(1, result.page());
     }
 
     @Test

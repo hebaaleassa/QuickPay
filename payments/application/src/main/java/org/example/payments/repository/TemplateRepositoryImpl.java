@@ -9,6 +9,10 @@ import jakarta.transaction.Transactional;
 import org.example.payments.mapper.TemplateMapper;
 import org.example.payments.model.TemplateEntity;
 import org.example.payments.model.TemplateField;
+import org.example.model.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -33,6 +37,12 @@ public class TemplateRepositoryImpl implements TemplateRepositoryInterface {
     @Override
     public List<Template> findAll() {
         return templateJpaRepository.findAll().stream().map(mapper::toDomain).toList();
+    }
+
+    public PageResult<Template> findAll(int page, int size) {
+        Page<TemplateEntity> result = templateJpaRepository.findAll(PageRequest.of(page, size, Sort.by("id")));
+        List<Template> content = result.getContent().stream().map(mapper::toDomain).toList();
+        return new PageResult<>(content, page, size, result.getTotalElements());
     }
 
     public Optional<Template> findBy(Long id) {

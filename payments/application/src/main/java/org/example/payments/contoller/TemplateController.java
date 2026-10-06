@@ -2,6 +2,8 @@ package org.example.payments.contoller;
 
 import com.progressoft.training.fileparser.domain.Template;
 import org.example.payments.mapper.TemplateMapper;
+import org.example.model.PageResult;
+import org.example.payments.resource.PageResponse;
 import org.example.payments.resource.TemplateRequest;
 import org.example.payments.resource.TemplateResponse;
 import org.example.payments.service.TemplateService;
@@ -25,11 +27,11 @@ public class TemplateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TemplateResponse>> getAll() {
-
-        List<TemplateResponse> responses = service.findAll().stream().map(mapper::toResponse).toList();
-
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<PageResponse<TemplateResponse>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageResult<Template> result = service.findAll(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        return ResponseEntity.ok(PageResponse.of(result, mapper::toResponse));
     }
 
     @GetMapping("/name/{name}")

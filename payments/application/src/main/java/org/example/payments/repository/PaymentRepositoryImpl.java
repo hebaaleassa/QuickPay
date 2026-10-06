@@ -1,12 +1,16 @@
 package org.example.payments.repository;
 
 import org.example.model.BulkResult;
+import org.example.model.PageResult;
 import org.example.model.Payment;
 import org.example.payments.mapper.PaymentMapper;
 import org.example.payments.model.PaymentEntity;
 import org.example.payments.service.PaymentService;
 import org.example.repository.PaymentRepository;
 import org.example.useCases.UploadBulkUseCse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,5 +50,12 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         return (jpaRepository.findAll().stream().map(
                 s -> mapper.toDomain(s)
         ).toList());
+    }
+
+    @Override
+    public PageResult<Payment> findAll(int page, int size) {
+        Page<PaymentEntity> result = jpaRepository.findAll(PageRequest.of(page, size, Sort.by("id")));
+        List<Payment> content = result.getContent().stream().map(mapper::toDomain).toList();
+        return new PageResult<>(content, page, size, result.getTotalElements());
     }
 }
