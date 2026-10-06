@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { Home } from './pages/home/home';
 import { Login } from './pages/login/login';
+import { NotFound } from './pages/not-found/not-found';
 import { PaymentsList } from './pages/payments-list/payments-list';
 
 // One route per page. New pages get a new line here.
@@ -12,4 +13,5 @@ export const routes: Routes = [
   // canActivate = the guard must allow the user in, otherwise they go to /login.
   { path: 'home', component: Home, canActivate: [authGuard] },
   { path: 'payments', component: PaymentsList, canActivate: [authGuard] },
+  { path: '**', component: NotFound },
 ];
