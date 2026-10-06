@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 // A request cannot be changed, so we make a copy with the extra header.
@@ -29,12 +29,20 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       // 401 on a normal request = the 5-minute access token probably expired.
       // (On login it only means "Bad credentials", on refresh it means the refresh token is dead.)
       if (error.status === 401 && !isAuthRequest) {
-        // TODO(human): instead of logging out right away, try to renew the token first.
-        // Call authService.refresh(), then re-send this request ONCE with the new token
-        // (use withToken(request, response.token) and next(...)). If the refresh itself fails,
-        // THEN do what the two lines below do. See the comment in the reply for hints.
-        authService.logout();
-        router.navigate(['/login']);
+        // Renew the tokens first, then send the SAME request again with the new access token.
+        // switchMap = "when the refresh answers, replace it with this other request".
+        // Retrying is not a loop: the retry goes through next(), not through this catchError,
+        // so a second 401 is returned to the page as a normal error.
+        return authService.refresh().pipe(
+          // Placed BEFORE switchMap on purpose: only a failed refresh logs out. If the retried
+          // request fails (e.g. 403), the page just gets that error and the user stays logged in.
+          catchError((refreshError) => {
+            authService.logout();
+            router.navigate(['/login']);
+            return throwError(() => refreshError);
+          }),
+          switchMap((response) => next(withToken(request, response.token))),
+        );
       }
       // Give the error back, so the page can still show its own message.
       return throwError(() => error);
