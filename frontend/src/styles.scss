@@ -1,0 +1,12 @@
+/* Globals only: colors, spacing and classes shared by several pages. */
+:root {
+  --color-primary: #1f3a5f;
+  --color-border: #c9ced6;
+  --color-error: #b00020;
+  --space: 12px;
+}
+
+/* Shared error text, used by any page that shows a backend message. */
+.error {
+  color: var(--color-error);
+}

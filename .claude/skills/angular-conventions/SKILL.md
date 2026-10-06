@@ -1,6 +1,6 @@
 ---
 name: angular-conventions
-description: QuickPay Angular conventions for components, styling and folder layout. Use whenever creating or editing anything under frontend/ (components, pages, services, models, routes, CSS).
+description: QuickPay Angular conventions for components, styling and folder layout. Use whenever creating or editing anything under frontend/ (components, pages, services, models, routes, SCSS).
 ---
 
 # Angular conventions (QuickPay)
@@ -12,7 +12,7 @@ The user is new to Angular: keep code simple and explain new concepts briefly.
 - **Standalone only.** Never write `@NgModule`. Each component lists its own `imports`.
 - **Page components** (`pages/<name>/`) own data and call services. **Presentational components** (`components/<name>/`)
   never inject services; they use `@Input()` / `@Output()` only. Create one only when markup is reused or a page is too long.
-- One folder per component with separate `.ts`, `.html`, `.css`. No inline templates/styles.
+- One folder per component with separate `.ts`, `.html`, `.scss`. No inline templates/styles.
 - Files and folders `kebab-case`, classes `PascalCase`, selector prefix `app-`.
   Pages and components have **no** `.component` suffix (`payments-list.ts`, class `PaymentsList`).
   Services use `.service.ts`; models are plain interfaces.
@@ -21,9 +21,9 @@ The user is new to Angular: keep code simple and explain new concepts briefly.
 - Comment *why* above anything non-obvious.
 
 ## Styling
-- **Plain CSS**, one `.css` per component. No SCSS, no UI library unless the user asks.
-- Colors/spacing/fonts are CSS variables in `src/styles.css` (`var(--color-primary)`); never hardcode them in components.
-- `styles.css` is for globals only (variables, body, shared classes like `.error`).
+- **SCSS**, one `.scss` per component. No UI library unless the user asks.
+- Colors/spacing/fonts are CSS variables in `src/styles.scss` (`var(--color-primary)`); never hardcode them in components.
+- `styles.scss` is for globals only (variables, body, shared classes like `.error`).
 
 ## Directories (`frontend/src/app/`)
 - Type-based: `models/`, `services/`, `interceptors/`, `guards/`, `components/` (shared), `pages/` (one folder per screen).

@@ -80,7 +80,7 @@ Location: `frontend/` at repo root. Angular CLI 22, Node 24 are installed.
 ### Keep it simple (the user is a beginner)
 
 - **Standalone components only** (no NgModules).
-- **Plain `@Component` + `.ts` / `.html` / `.css`** per component; keep each file small.
+- **Plain `@Component` + `.ts` / `.html` / `.scss`** per component; keep each file small.
 - Use `HttpClient` + **`subscribe()`** in components. Avoid advanced RxJS (`switchMap`, `combineLatest`, …).
 - Use simple class properties (`payments: Payment[] = []`) rather than signals; use `@if` / `@for` in templates.
 - Use **template-driven forms** (`[(ngModel)]`) instead of reactive forms.

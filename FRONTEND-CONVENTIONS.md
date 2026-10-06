@@ -12,7 +12,7 @@ Every component declares what it needs in its own `imports` array.
   selector: 'app-payments-list',
   imports: [FormsModule],          // only what THIS template uses
   templateUrl: './payments-list.html',
-  styleUrl: './payments-list.css',
+  styleUrl: './payments-list.scss',
 })
 export class PaymentsList { }
 ```
@@ -36,7 +36,7 @@ Rules:
 
 ### 1.3 Naming and files
 
-- One component = one folder with `.ts`, `.html`, `.css` (no inline templates or styles).
+- One component = one folder with `.ts`, `.html`, `.scss` (no inline templates or styles).
 - Folder and file names: `kebab-case` (`payment-form/payment-form.ts`).
 - Class names: `PascalCase` (`PaymentForm`).
 - Selector prefix: `app-`.
@@ -53,21 +53,21 @@ Rules:
 
 ## 2. Style convention
 
-**Plain CSS, no UI library.**
+**SCSS, no UI library.**
 
-- Each component has its own `.css` file. Angular scopes it to that component, so class names cannot clash.
-- Colors, spacing and fonts live as CSS variables in `src/styles.css`, so the look changes in one place:
-  ```css
+- Each component has its own `.scss` file. Angular scopes it to that component, so class names cannot clash.
+- Colors, spacing and fonts live as CSS variables in `src/styles.scss`, so the look changes in one place:
+  ```scss
   :root { --color-primary: #1565c0; --space: 8px; }
   ```
-  ```css
-  /* in a component .css */
+  ```scss
+  /* in a component .scss */
   button { background: var(--color-primary); padding: var(--space); }
   ```
-- `styles.css` holds only global things: variables, base `body` styles, and a few shared classes (`.error`, `.btn`).
-- No SCSS and no Angular Material / Bootstrap for now. Revisit only if the user asks.
+- `styles.scss` holds only global things: variables, base `body` styles, and a few shared classes (`.error`, `.btn`).
+- No Angular Material / Bootstrap for now. Revisit only if the user asks.
 
-**Why:** the CLI project is already plain CSS, so there is nothing to set up. CSS variables give most of what a beginner would use SCSS for. A UI library adds a second thing to learn on top of Angular.
+**Why:** the CLI project is set up with SCSS, so there is nothing to configure. SCSS is a superset of CSS, so plain CSS (and CSS variables) still works in it. A UI library adds a second thing to learn on top of Angular.
 
 ## 3. Directory convention
 
