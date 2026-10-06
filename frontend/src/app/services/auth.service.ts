@@ -1,14 +1,18 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { finalize, Observable, tap } from 'rxjs';
-import { LoginRequest, LoginResponse } from '../models/login';
+import { finalize, Observable, shareReplay, tap } from 'rxjs';
+import { LoginRequest, LoginResponse, RefreshRequest } from '../models/login';
 
-// sessionStorage key. Kept in one place so it is never mistyped.
+// sessionStorage keys. Kept in one place so they are never mistyped.
 const TOKEN_KEY = 'token';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 // providedIn: 'root' = Angular creates ONE shared instance for the whole app.
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  // The refresh request that is running right now, if any. See refresh() for why.
+  private refreshInFlight: Observable<LoginResponse> | null = null;
+
   constructor(private http: HttpClient) {}
 
   // Returns the request so the component can subscribe and react to success / error.
@@ -17,13 +21,31 @@ export class AuthService {
     const body: LoginRequest = { username, password };
     return this.http
       .post<LoginResponse>('/api/auth/login', body)
-      .pipe(tap((response) => sessionStorage.setItem(TOKEN_KEY, response.token)));
+      .pipe(tap((response) => this.saveTokens(response)));
   }
 
-  // Normal logout: only forgets the token in this browser. No request, so the token version
+  // Trades the refresh token for a new pair of tokens (the access token lives only 5 minutes).
+  // If 3 requests get a 401 at the same moment, all 3 call this. We share ONE running request
+  // between them, so we make 1 refresh call instead of 3 and save the new tokens only once.
+  refresh(): Observable<LoginResponse> {
+    if (!this.refreshInFlight) {
+      const body: RefreshRequest = { refreshToken: this.getRefreshToken() ?? '' };
+      this.refreshInFlight = this.http.post<LoginResponse>('/api/auth/refresh', body).pipe(
+        tap((response) => this.saveTokens(response)),
+        // Done (success or error): the next expiry may start a fresh refresh.
+        finalize(() => (this.refreshInFlight = null)),
+        // Everyone who subscribes gets the same answer instead of sending a new request.
+        shareReplay(1),
+      );
+    }
+    return this.refreshInFlight;
+  }
+
+  // Normal logout: only forgets the tokens in this browser. No request, so the token version
   // does NOT change and the user's other sessions stay logged in.
   logout(): void {
     sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
   // "Sign out of all devices": the backend raises our token version (its endpoint is called
@@ -37,10 +59,15 @@ export class AuthService {
     return sessionStorage.getItem(TOKEN_KEY);
   }
 
-  // Logged in = a token exists AND it has not expired (backend tokens last 60 minutes).
+  getRefreshToken(): string | null {
+    return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  // Logged in = the REFRESH token exists and has not expired (1 hour). We do not look at the access
+  // token here: it expires every 5 minutes, but the interceptor quietly renews it when needed.
   // The backend still checks the token; this only decides what the UI shows.
   isLoggedIn(): boolean {
-    const payload = this.readPayload();
+    const payload = this.readPayload(this.getRefreshToken());
     if (!payload) {
       return false;
     }
@@ -50,11 +77,16 @@ export class AuthService {
 
   // Roles come from the token claim "roles", e.g. ["TEMPLATE", "ADMIN"].
   getRoles(): string[] {
-    return this.readPayload()?.roles ?? [];
+    return this.readPayload(this.getToken())?.roles ?? [];
   }
 
   hasRole(role: string): boolean {
     return this.getRoles().includes(role);
+  }
+
+  private saveTokens(response: LoginResponse): void {
+    sessionStorage.setItem(TOKEN_KEY, response.token);
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
   }
 
   // Turns a failed login response into the text shown on the login page.
@@ -74,8 +106,7 @@ export class AuthService {
 
   // A JWT is "header.payload.signature". The payload is base64 JSON, so we can read it
   // without any library. We never verify the signature here: that is the backend's job.
-  private readPayload(): { exp: number; roles: string[] } | null {
-    const token = this.getToken();
+  private readPayload(token: string | null): { exp: number; roles: string[] } | null {
     if (!token) {
       return null;
     }
