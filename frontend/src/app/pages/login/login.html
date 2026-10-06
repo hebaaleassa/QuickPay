@@ -1,0 +1,22 @@
+<div class="card login-card">
+  <h2>Login</h2>
+  <p class="subtitle">Sign in to manage your payments.</p>
+
+  <!-- (ngSubmit) runs login() in login.ts when the user clicks the button or presses Enter. -->
+  <form (ngSubmit)="login()">
+    <label for="username">Username</label>
+    <!-- [(ngModel)] keeps the input and the "username" property in login.ts in sync. -->
+    <!-- name="..." is required by ngModel inside a form. -->
+    <input id="username" name="username" type="text" [(ngModel)]="username" required />
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" [(ngModel)]="password" required />
+
+    <button type="submit" class="button">Login</button>
+  </form>
+
+  <!-- Only shown when errorMessage is not empty, e.g. "Bad credentials". -->
+  @if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  }
+</div>

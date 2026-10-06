@@ -1,3 +1,19 @@
-header { background: #1f3a5f; color: white; padding: 12px 24px; }
-h1 { margin: 0; font-size: 1.4rem; }
-main { padding: 24px; }
+header {
+  background: var(--color-primary);
+  color: white;
+  padding: 14px 32px;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+}
+
+// Keeps content readable on wide screens instead of stretching edge to edge.
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
