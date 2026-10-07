@@ -1,5 +1,8 @@
 <header>
   <h1>QuickPay</h1>
+  @if (authService.isLoggedIn()) {
+    <button type="button" class="logout" (click)="logout()">Logout</button>
+  }
 </header>
 <main>
   <!-- The page for the current route is shown here -->

@@ -1,7 +1,11 @@
 <div class="card">
   <div class="page-header">
     <h2>Payments</h2>
-    <a class="button button-secondary" routerLink="/home">Back to home</a>
+  </div>
+
+  <div class="actions">
+    <a class="button" routerLink="/payments/new">Create payment</a>
+    <a class="button button-secondary" routerLink="/payments/bulk">Bulk upload</a>
   </div>
 
   @if (loading) {
@@ -9,37 +13,43 @@
   } @else if (errorMessage) {
     <p class="error">{{ errorMessage }}</p>
   } @else if (payments.length === 0) {
-    <p class="message">No payments yet.</p>
+    <p class="message">No payments</p>
   } @else {
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Sender</th>
             <th>Receiver</th>
             <th class="amount">Amount</th>
             <th>Status</th>
             <th>Created</th>
-            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
           <!-- track = how Angular tells rows apart, so it only redraws rows that changed -->
           @for (payment of payments; track payment.id) {
-            <tr>
-              <td>{{ payment.id }}</td>
-              <td>{{ payment.senderAccount }}</td>
-              <td>{{ payment.receiverAccount }}</td>
-              <td class="amount">{{ payment.amount }} {{ payment.currency }}</td>
-              <td><span class="status">{{ payment.status }}</span></td>
+            <tr class="clickable" (click)="openDetails(payment)">
+              <td class="id">#{{ payment.id }}</td>
+              <td class="account">{{ payment.receiverAccount }}</td>
+              <td class="amount">{{ payment.amount | number: '1.2-2' }} <span class="currency">{{ payment.currency }}</span></td>
+              <td><span class="status" [class]="'status ' + payment.status.toLowerCase()">{{ payment.status }}</span></td>
               <!-- "| date" is a pipe: it only changes how the value is displayed. -->
-              <td>{{ payment.createdAt | date: 'medium' }}</td>
-              <td>{{ payment.notes }}</td>
+              <td class="date">{{ payment.createdAt | date: 'mediumDate' }}</td>
             </tr>
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="pager">
+      <button type="button" class="button button-secondary" [disabled]="page === 0" (click)="previous()">
+        Previous
+      </button>
+      <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+      <button type="button" class="button button-secondary" [disabled]="page + 1 >= totalPages" (click)="next()">
+        Next
+      </button>
     </div>
   }
 </div>

@@ -11,3 +11,12 @@ export interface Payment {
   createdAt: string;
   notes: string;
 }
+
+export interface PaymentRequest {
+  senderAccount: string;
+  receiverAccount: string;
+  amount: number | null;
+  currency: string;
+  notes: string;
+  creditorName: string;
+}

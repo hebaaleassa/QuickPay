@@ -1,0 +1,103 @@
+<div class="card">
+  <div class="page-header">
+    <div>
+      <h2>Bulk upload</h2>
+      <p class="hint">Upload a file with many payments at once. The default template is used to read it.</p>
+    </div>
+    <a class="button button-secondary" routerLink="/payments">Back to payments</a>
+  </div>
+
+  <form (ngSubmit)="upload()">
+
+    <label class="drop-zone" [class.has-file]="file">
+      <span class="drop-icon">{{ file ? '📄' : '⬆️' }}</span>
+      @if (file) {
+        <strong>{{ file.name }}</strong>
+        <span class="hint">{{ fileSize }} · click to choose another file</span>
+      } @else {
+        <strong>Choose a file</strong>
+        <span class="hint">Click here to pick the file from your computer</span>
+      }
+      <input type="file" name="file" (change)="onFileSelected($event)" />
+    </label>
+
+    <button type="submit" class="button" [disabled]="!file || uploading">
+      {{ uploading ? 'Uploading...' : 'Upload file' }}
+    </button>
+  </form>
+
+  @if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  }
+
+  @if (result) {
+
+    <div class="banner" [class]="'banner ' + outcome">
+      <div class="banner-title">
+        @switch (outcome) {
+          @case ('success') { ✅ Upload succeeded }
+          @case ('partial') { ⚠️ Upload partly succeeded }
+          @default { ❌ Upload failed }
+        }
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="number">{{ result.total }}</span><span>Total rows</span></div>
+        <div class="stat ok"><span class="number">{{ result.success }}</span><span>Succeeded</span></div>
+        <div class="stat bad"><span class="number">{{ result.failure }}</span><span>Failed</span></div>
+      </div>
+    </div>
+
+    @if (rowErrors.length > 0) {
+      <h3>Id with errors</h3>
+      <ul class="row-errors">
+        @for (item of rowErrors; track item.row) {
+          <li>
+            <span class="row-badge">Id {{ item.row }}</span>
+            <span>{{ item.messages.join(', ') }}</span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (wasSaved) {
+      <h3>Saved payments ({{ result.payments.length }})</h3>
+    } @else {
+      <h3>Valid payments ({{ result.payments.length }})</h3>
+      @if (result.payments.length > 0) {
+        <p class="hint">These rows passed validation but were NOT saved (the server has bulk saving turned off).</p>
+      }
+    }
+    @if (result.payments.length === 0) {
+      <p class="empty">No valid payments in this file.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Sender</th>
+              <th>Receiver</th>
+              <th class="amount">Amount</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of result.payments; track payment.id) {
+              <tr>
+                <td>{{ payment.id }}</td>
+                <td>{{ payment.senderAccount }}</td>
+                <td>{{ payment.receiverAccount }}</td>
+                <td class="amount">{{ payment.amount }} {{ payment.currency }}</td>
+                <td><span class="status">{{ payment.status }}</span></td>
+                <td>{{ payment.createdAt | date: 'medium' }}</td>
+                <td>{{ payment.notes }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

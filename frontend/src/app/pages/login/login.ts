@@ -32,7 +32,7 @@ export class Login {
     this.authService.login(this.username, this.password).subscribe({
       // Success: the token is already saved by AuthService, so we only move on.
       next: () => {
-        this.router.navigate(['/home']);
+        this.router.navigate(['/payments']);
       },
       // Failure (e.g. 401): show the message instead of moving on.
       error: (error: HttpErrorResponse) => {

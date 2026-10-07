@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { OfflineModal } from './components/offline-modal/offline-modal';
+import { AuthService } from './services/auth.service';
 import { ConnectionService } from './services/connection.service';
 
 @Component({
@@ -15,9 +16,16 @@ export class App {
   checking = false;
 
   constructor(
+    public authService: AuthService,
+    private router: Router,
     private connectionService: ConnectionService,
     private changeDetector: ChangeDetectorRef,
   ) {}
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 
   // @HostListener listens to browser events. The browser fires "offline" / "online"
   // on the window when the connection is lost / comes back.

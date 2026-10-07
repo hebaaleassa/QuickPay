@@ -124,6 +124,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/revoke/*").hasRole("ADMIN")
                         .requestMatchers("/api/payments/**").hasAnyRole("PAYMENT", "TEMPLATE")
                         .requestMatchers("/api/templates/**").hasRole("TEMPLATE")
+                        // Angular page URLs (refresh on /payments/5, unknown URLs) get index.html, no token needed.
+                        .requestMatchers(request -> "GET".equals(request.getMethod()) && SpaPaths.isPage(request.getRequestURI())).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
