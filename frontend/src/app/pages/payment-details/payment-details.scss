@@ -1,0 +1,103 @@
+.details-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.message {
+  color: var(--color-muted);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+}
+
+.label {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.big-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.currency {
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.status {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+
+  &.completed {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  &.pending {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+
+.item {
+  min-width: 0;
+
+  &.full {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+.account {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.9rem;
+}

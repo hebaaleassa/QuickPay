@@ -1,5 +1,6 @@
 package org.example.payments.service;
 
+import org.example.model.PageResult;
 import com.progressoft.training.fileparser.domain.FieldDefinition;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.*;
@@ -94,6 +95,14 @@ class TemplateServiceTest {
         List<Template> result = templateService.findAll();
         assertNotNull(result);
         assertEquals(result, List.of(template));
+    }
+
+    @Test
+    void givenPageAndSize_whenFindAllPaged_thenDelegatesToRepository() {
+        PageResult<Template> page = new PageResult<>(List.of(template), 0, 10, 1);
+        when(repository.findAll(0, 10)).thenReturn(page);
+
+        assertEquals(page, templateService.findAll(0, 10));
     }
 
     @Test

@@ -39,12 +39,31 @@ Runs on `http://localhost:8080`. Run: `cd payments && ./mvnw spring-boot:run -pl
   in the frontend; show the backend's error messages instead.
 - Data differs per database (H2 file vs. Postgres volume), so don't assume seed data exists.
 
-**Auth:** HTTP Basic, CSRF disabled, **no CORS config**. In-memory users:
+**Auth:** stateless JWT (HS256, Spring resource server), CSRF disabled, **no CORS config**. In-memory users:
 
-| user  | password   | role     | can access                          |
-|-------|------------|----------|-------------------------------------|
-| alice | `alice123` | PAYMENT  | `/api/payments/**`                  |
-| admin | `admin123` | TEMPLATE | `/api/payments/**` and `/api/templates/**` |
+| user  | password   | roles             | can access                          |
+|-------|------------|-------------------|-------------------------------------|
+| alice | `alice123` | PAYMENT           | `/api/payments/**`                  |
+| admin | `admin123` | TEMPLATE, ADMIN   | `/api/payments/**`, `/api/templates/**`, `/api/auth/revoke/*` |
+
+Two tokens, both signed with the same key and told apart by the `type` claim:
+
+| Token   | Lifetime (`application.properties`) | Claims                      | Used for                          |
+|---------|-------------------------------------|-----------------------------|-----------------------------------|
+| access  | 5 min (`jwt.expiry-minutes`)        | `sub, roles, ver, type=access`  | `Authorization: Bearer <token>` on every API call |
+| refresh | 60 min (`jwt.refresh-expiry-minutes`) | `sub, ver, type=refresh`  | only sent to `/api/auth/refresh`  |
+
+`ver` is a per-user version counter (`TokenVersionStore`). Raising it invalidates every token issued
+before (both types). Roles are NOT in the refresh token; they are re-read from the user on refresh.
+
+**Auth endpoints** (`/api/auth/*`)
+
+| Method | Path                        | Body / notes                                                      |
+|--------|-----------------------------|-------------------------------------------------------------------|
+| POST   | `/api/auth/login`           | `{username, password}` → `{token, refreshToken}` (401, empty body, if wrong) — public |
+| POST   | `/api/auth/refresh`         | `{refreshToken}` → new `{token, refreshToken}` (401 if expired/revoked/wrong type) — public |
+| POST   | `/api/auth/logout-all`      | Bearer required; bumps the caller's `ver` (signs out all devices) |
+| POST   | `/api/auth/revoke/{username}` | ADMIN only; bumps that user's `ver` → 204 (404 if unknown user) |
 
 **Endpoints**
 
@@ -108,11 +127,16 @@ Why: components never call `HttpClient` directly, so when the backend adds/chang
 - **Docker-ready:** because the frontend only calls relative `/api/...`, it can later be served by nginx in its own
   container (add a `frontend` service to `payments/docker-compose.yaml` or a new compose file) with nginx proxying
   `/api` to the `app` service. Same code, no changes. Only add this when the user asks; it touches compose files.
-- **Auth:** a login page collects username/password, `AuthService` stores them in memory/`sessionStorage`,
-  and one **HTTP interceptor** adds the `Authorization: Basic ...` header to every request.
-  Hide template pages/menu items for users without the `TEMPLATE` role (backend still enforces it).
-- **Errors:** backend errors are plain text, so read `error.error` as a string and show it to the user.
-  Handle 401 (send to login) and 403 (show "not allowed").
+- **Auth:** a login page posts username/password to `/api/auth/login`; `AuthService` keeps `token` and
+  `refreshToken` in `sessionStorage`. One **HTTP interceptor** (`interceptors/auth.interceptor.ts`) adds
+  `Authorization: Bearer <token>` to every request except login/refresh. On a 401 it calls
+  `AuthService.refresh()` (one shared in-flight request via `shareReplay`) and retries the request once;
+  only if the refresh fails does it log out and go to `/login`. `auth.guard.ts` protects pages.
+  Roles are read from the access token's `roles` claim. Hide template pages/menu items for users
+  without the `TEMPLATE` role (backend still enforces it).
+- **Errors:** most backend errors are plain text, so read `error.error` as a string and show it to the user.
+  401 on login has an empty body (show a fixed "wrong username or password"). 401 elsewhere is handled by the
+  interceptor (refresh, else login); show "not allowed" on 403.
 - Field names in models must match the backend JSON exactly (including `requestList` and `TemplateName`).
 
 ### Commands

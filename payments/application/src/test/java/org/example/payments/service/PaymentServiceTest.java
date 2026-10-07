@@ -1,5 +1,6 @@
 package org.example.payments.service;
 
+import org.example.model.PageResult;
 import com.progressoft.training.fileparser.usecase.ParseFileUseCase;
 import org.example.model.BulkResult;
 import org.example.model.Payment;
@@ -78,6 +79,14 @@ class PaymentServiceTest {
 
         assertEquals(1, result.size());
         verify(repository).findAll();
+    }
+
+    @Test
+    void givenPageAndSize_whenFindAllPaged_thenDelegatesToRepository() {
+        PageResult<Payment> page = new PageResult<>(List.of(payment), 0, 10, 1);
+        when(repository.findAll(0, 10)).thenReturn(page);
+
+        assertEquals(page, paymentService.findAll(0, 10));
     }
 
     @Test

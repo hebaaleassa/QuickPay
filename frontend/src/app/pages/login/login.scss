@@ -1,0 +1,41 @@
+// A narrow card centered on the page.
+.login-card {
+  max-width: 380px;
+  margin: 48px auto;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.subtitle {
+  color: var(--color-muted);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: var(--space);
+}
+
+input {
+  padding: 10px var(--space);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+
+  &:focus {
+    outline: 2px solid var(--color-accent);
+    border-color: transparent;
+  }
+}
+
+button {
+  margin-top: 20px;
+}

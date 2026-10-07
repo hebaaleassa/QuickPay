@@ -1,0 +1,46 @@
+<div class="card details-card">
+  <div class="page-header">
+    <h2>Payment details</h2>
+    <a class="button button-secondary" routerLink="/payments">Back to payments</a>
+  </div>
+
+  @if (loading) {
+    <p class="message">Loading...</p>
+  } @else if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  } @else if (payment) {
+
+    <div class="summary">
+      <div>
+        <div class="label">Amount</div>
+        <div class="big-amount">
+          {{ payment.amount | number: '1.2-2' }} <span class="currency">{{ payment.currency }}</span>
+        </div>
+      </div>
+      <span [class]="'status ' + payment.status.toLowerCase()">{{ payment.status }}</span>
+    </div>
+
+    <dl class="fields">
+      <div class="item">
+        <dt>Payment ID</dt>
+        <dd>#{{ payment.id }}</dd>
+      </div>
+      <div class="item">
+        <dt>Created</dt>
+        <dd>{{ payment.createdAt | date: 'medium' }}</dd>
+      </div>
+      <div class="item">
+        <dt>Sender account</dt>
+        <dd class="account">{{ payment.senderAccount }}</dd>
+      </div>
+      <div class="item">
+        <dt>Receiver account</dt>
+        <dd class="account">{{ payment.receiverAccount }}</dd>
+      </div>
+      <div class="item full">
+        <dt>Notes</dt>
+        <dd>{{ payment.notes || 'No notes' }}</dd>
+      </div>
+    </dl>
+  }
+</div>

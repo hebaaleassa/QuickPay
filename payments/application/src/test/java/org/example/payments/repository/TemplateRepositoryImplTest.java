@@ -1,5 +1,9 @@
 package org.example.payments.repository;
 
+import org.example.model.PageResult;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import com.progressoft.training.fileparser.domain.FieldDefinition;
 import com.progressoft.training.fileparser.domain.Template;
 import org.example.payments.mapper.TemplateMapper;
@@ -89,6 +93,19 @@ class TemplateRepositoryImplTest {
         when(jpaRepository.findByName("payment-custom")).thenReturn(Optional.of(entity));
         repository.deleteByName("payment-custom");
         verify(jpaRepository).delete(entity);
+    }
+
+    @Test
+    public void givenPageAndSize_whenFindAllPaged_thenReturnsMappedPage() {
+        TemplateEntity entity = new TemplateEntity();
+        when(jpaRepository.findAll(PageRequest.of(0, 10, Sort.by("id"))))
+                .thenReturn(new PageImpl<>(List.of(entity), PageRequest.of(0, 10), 1));
+        when(mapper.toDomain(entity)).thenReturn(template);
+
+        PageResult<Template> result = repository.findAll(0, 10);
+
+        assertEquals(List.of(template), result.content());
+        assertEquals(1, result.totalElements());
     }
 
     @Test

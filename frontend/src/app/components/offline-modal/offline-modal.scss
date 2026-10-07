@@ -1,0 +1,23 @@
+// The backdrop covers the whole screen, so the page behind cannot be clicked.
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 360px;
+  text-align: center;
+}
+
+h2 {
+  margin-top: 0;
+}

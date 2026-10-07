@@ -3,6 +3,7 @@ package org.example.payments.contoller;
 import org.example.payments.mapper.PaymentMapper;
 import org.example.payments.resource.BulkUploadRequest;
 import org.example.payments.resource.BulkUploadResponse;
+import org.example.payments.resource.PageResponse;
 import org.example.payments.resource.PaymentRequest;
 import org.example.payments.resource.PaymentResponse;
 import org.example.payments.service.PaymentService;
@@ -43,9 +44,11 @@ public class PaymentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PaymentResponse>> getPayments() {
-        List<PaymentResponse> paymentResponses = service.findAll().stream().map(mapper::toResponse).toList();
-        return ResponseEntity.ok(paymentResponses);
+    public ResponseEntity<PageResponse<PaymentResponse>> getPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageResult<Payment> result = service.findAll(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        return ResponseEntity.ok(PageResponse.of(result, mapper::toResponse));
     }
 
     @GetMapping("/{id}")

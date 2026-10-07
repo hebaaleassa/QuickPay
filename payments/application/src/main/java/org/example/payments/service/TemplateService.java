@@ -3,6 +3,7 @@ package org.example.payments.service;
 import com.progressoft.training.fileparser.domain.ListTemplatesQuery;
 import com.progressoft.training.fileparser.domain.Template;
 import com.progressoft.training.fileparser.usecase.*;
+import org.example.model.PageResult;
 import org.example.payments.repository.TemplateRepositoryImpl;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +45,10 @@ public class TemplateService {
 
     public List<Template> findAll() {
         return repository.findAll();
+    }
+
+    public PageResult<Template> findAll(int page, int size) {
+        return repository.findAll(page, size);
     }
 
     public void delete(String name) {

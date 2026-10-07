@@ -1,7 +1,14 @@
 <header>
   <h1>QuickPay</h1>
+  @if (authService.isLoggedIn()) {
+    <button type="button" class="logout" (click)="logout()">Logout</button>
+  }
 </header>
 <main>
   <!-- The page for the current route is shown here -->
   <router-outlet />
 </main>
+
+@if (!isOnline) {
+  <app-offline-modal [checking]="checking" (retry)="tryAgain()" />
+}
